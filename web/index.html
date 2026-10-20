@@ -170,6 +170,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 /* nav : barre flottante sur téléphone, colonne latérale sur ordinateur */
 .nav{position:fixed;z-index:15;left:50%;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom, 0px));width:max-content;max-width:calc(100% - 16px);background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:6px;box-shadow:0 10px 30px -12px rgba(15,25,45,.35),0 2px 6px -2px rgba(15,25,45,.12)}
 .nav-brand{display:none}
+.nav-brand img.logo{width:38px;height:38px;border-radius:10px;object-fit:cover;flex:none}
 .nav ul{list-style:none;margin:0;padding:0;display:flex;gap:2px}
 .nav li[hidden]{display:none}
 .nav button{position:relative;border:0;background:none;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 10px;min-width:56px;border-radius:18px;color:var(--muted);font-size:.68rem;font-weight:600;transition:background .15s,color .15s}
@@ -319,6 +320,21 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .mcal .tag{font-size:.68rem;font-weight:700;border-radius:6px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media (max-width:560px){.mcal .day{min-height:54px;padding:4px}.mcal .pill{font-size:0;padding:0;height:6px;border-radius:99px}.mcal .tag{font-size:0;padding:0;height:6px;border-radius:99px}}
 .day-detail{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.dayline{display:grid;grid-template-columns:130px minmax(0,1fr);gap:8px;align-items:center}
+.dayline .track{position:relative;height:30px;background:var(--bg);border-radius:8px;overflow:hidden}
+.dayline .bar{position:absolute;top:3px;bottom:3px;border-radius:6px;font-size:.72rem;font-weight:700;display:flex;align-items:center;padding:0 6px;white-space:nowrap;overflow:hidden;font-family:var(--f-mono)}
+.dayline .scale{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.cov{display:grid;gap:2px}
+.cov span{height:22px;border-radius:4px;font-size:.66rem;font-weight:700;display:flex;align-items:center;justify-content:center;background:var(--soft);color:var(--muted)}
+.cov span.ok{background:var(--ok-bg);color:var(--ok)}.cov span.low{background:var(--warn-bg);color:var(--warn)}.cov span.zero{background:var(--crit-bg);color:var(--crit)}
+@media (max-width:560px){.dayline{grid-template-columns:84px minmax(0,1fr)}}
+.thread{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow:auto;padding:4px}
+.bubble{max-width:82%;padding:8px 12px;border-radius:14px;background:var(--bg);border:1px solid var(--line);align-self:flex-start}
+.bubble.me{align-self:flex-end;background:var(--accent-soft);border-color:transparent}
+.bubble time{display:block;font-size:.7rem;color:var(--muted);font-weight:600;margin-bottom:2px}
+.bubble p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.cell.extra{background:var(--ok-bg);color:var(--ok)}
+.mcal .tag.extra{background:var(--ok-bg);color:var(--ok)}
 /* print */
 #print-area{display:none}
 @media print{
@@ -392,11 +408,10 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     </form>
 
     <div id="a-config" hidden style="display:flex;flex-direction:column;gap:14px">
-      <p>MonKiosk n'est pas encore relié à sa base de données. Tu peux quand même découvrir l'appli avec l'exemple.</p>
+      <p>MonKiosk n'est pas encore relié à sa base de données. Vérifie le fichier config.js.</p>
     </div>
 
-    <div class="divider">ou</div>
-    <button type="button" class="btn" id="a-demo">Découvrir la démo</button>
+
     <a class="linkbtn" id="a-download" href="https://github.com/zyg-off/MonKiosk/releases/latest/download/MonKiosk-Installer.exe" style="align-self:center;font-size:.88rem">Télécharger MonKiosk pour Windows</a>
   </div>
 </div>
@@ -441,8 +456,13 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
       <span id="weeklabel"></span>
       <button type="button" id="next" aria-label="Semaine suivante">›</button>
     </div>
+    <div class="row" style="justify-content:space-between">
+      <div class="filters" id="pv-toggle"><button type="button" data-pview="week" aria-pressed="true">Semaine</button><button type="button" data-pview="day" aria-pressed="false">Jour</button></div>
+      <div class="filters" id="pv-days" hidden></div>
+    </div>
     <ul class="alerts" id="plan-alerts"></ul>
-    <div class="tablewrap"><table id="grid"></table></div>
+    <div class="tablewrap" id="weekview"><table id="grid"></table></div>
+    <div class="card" id="dayview" hidden></div>
     <p class="small" id="plan-cost" style="margin:0"></p>
     <div class="legend" aria-label="Postes">
       <span id="legend-postes" style="display:contents"></span><span class="p-leave">Congé validé</span>
@@ -451,6 +471,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     <div class="actions">
       <button type="button" class="btn primary" id="add-emp">+ Ajouter un salarié</button>
       <button type="button" class="btn" id="copy-week">Reprendre la semaine précédente</button>
+      <button type="button" class="btn" id="auto-btn">Proposer un planning</button>
       <button type="button" class="btn" id="tpl-btn">Semaines types</button>
       <button type="button" class="btn" id="print-plan">Imprimer</button>
     </div>
@@ -494,6 +515,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     <div class="card" id="recap-card"><div class="card-head"><h2 class="hi" data-icon="clock">Heures du mois</h2><div class="row" style="gap:8px"><input type="month" id="recap-month" aria-label="Mois"><button type="button" class="btn sm" id="recap-csv">Exporter (CSV)</button></div></div>
       <p class="muted small" style="margin:0">Heures prévues et pointées par salarié, à transmettre pour la paie.</p>
       <div style="overflow-x:auto"><table class="loss-table" id="recap"></table></div></div>
+    <div class="card" id="reports-card-anchor" hidden></div>
     <div class="card" id="reports-card"><h2 class="hi" data-icon="alert">Signalements de l'équipe</h2><ul class="list" id="reports"></ul></div>
     <div class="card" id="accounts-card" hidden>
       <div class="card-head"><h2 class="hi" data-icon="key">Comptes salariés</h2></div>
@@ -501,6 +523,9 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
       <div class="row"><span class="big" id="join-code" style="letter-spacing:.15em">—</span><button type="button" class="btn sm" id="copy-code">Copier</button><button type="button" class="btn sm" id="regen-code">Nouveau code</button></div>
       <ul class="list" id="members"></ul>
     </div>
+    <div class="card" id="msg-card"><h2 class="hi" data-icon="megaphone">Messagerie d'équipe</h2><div class="thread" id="o-thread"></div>
+      <div class="row"><input type="text" id="o-msg" maxlength="1000" placeholder="Écris un message à toute l'équipe" aria-label="Message"><button type="button" class="btn primary" id="o-send">Envoyer</button></div></div>
+    <div class="card" id="log-card"><div class="card-head"><h2 class="hi" data-icon="list">Historique des modifications</h2><input type="text" id="log-filter" placeholder="Filtrer (nom, mot…)" aria-label="Filtrer l'historique" style="max-width:220px"></div><ul class="list" id="log"></ul></div>
   </section>
 
   <!-- TACHES -->
@@ -530,8 +555,10 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
       <h2 class="hi" data-icon="truck">Commande à passer</h2>
       <p class="muted small" style="margin:0">Les articles sous leur seuil, regroupés par fournisseur. Quantité proposée pour remonter au double du seuil.</p>
       <pre class="msg" id="order-text"></pre>
-      <div class="row"><button type="button" class="btn primary" id="copy-order">Copier la commande</button></div>
+      <div class="row"><button type="button" class="btn primary" id="make-orders">Créer les commandes</button><button type="button" class="btn" id="copy-order">Copier la liste</button></div>
     </div>
+    <div class="card"><h2 class="hi" data-icon="truck">Commandes fournisseurs</h2><ul class="list" id="orders"></ul></div>
+    <div class="card"><div class="card-head"><h2 class="hi" data-icon="euro">Valeur du stock</h2><button type="button" class="btn sm primary" id="inv-btn">Faire l'inventaire</button></div><div id="stock-value"></div></div>
   </section>
 
   <!-- VENTES -->
@@ -554,6 +581,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
       <div class="card-head"><h2 class="hi" data-icon="target">Par mois</h2><span class="muted small">12 derniers mois</span></div>
       <div id="month-box" style="display:flex;flex-direction:column;gap:14px"></div>
     </div>
+    <div class="card" id="profit-card"><div class="card-head"><h2 class="hi" data-icon="target">Rentabilité</h2><span class="muted small">Hors loyer et charges fixes</span></div><div style="overflow-x:auto"><table class="loss-table" id="profit"></table></div></div>
     <div class="card" id="loss-card">
       <div class="card-head"><h2 class="hi" data-icon="trash">Pertes et invendus</h2><div class="row" style="gap:8px"><input type="date" id="l-date" aria-label="Date"><button type="button" class="btn sm" id="prod-btn">Gérer les produits</button></div></div>
       <div style="overflow-x:auto"><table class="loss-table" id="loss-table"></table></div>
@@ -593,6 +621,10 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     </div>
     <div class="etab" data-etab="e-stock" hidden>
     <div class="card" id="e-stock-card"><h2 class="hi" data-icon="box">Stock</h2><p class="muted small" style="margin:0">Mets à jour les quantités quand tu ranges une livraison ou que tu utilises un produit.</p><div id="e-stock"></div></div>
+    </div>
+    <div class="etab" data-etab="e-messages" hidden>
+      <div class="card"><h2 class="hi" data-icon="megaphone">Messages de l'équipe</h2><div class="thread" id="e-thread"></div>
+        <div class="row"><input type="text" id="e-msg" maxlength="1000" placeholder="Écris un message à l'équipe" aria-label="Message"><button type="button" class="btn primary" data-eact="msg">Envoyer</button></div></div>
     </div>
     <div class="etab" data-etab="e-conges" hidden>
       <div class="card"><h2 class="hi" data-icon="umbrella">Mes congés</h2><div id="e-leaves"></div></div>
@@ -660,7 +692,7 @@ const ICONS={
 function ic(n){return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;}
 document.querySelectorAll('[data-icon]').forEach(h=>h.insertAdjacentHTML('afterbegin',ic(h.dataset.icon)));
 const OWNER_NAV=document.querySelector('#nav ul').innerHTML;
-const ENAV=[['e-home',"Aujourd'hui",'sun'],['e-planning','Planning','calendar'],['e-taches','Tâches','check'],['e-stock','Stock','box'],['e-conges','Congés','umbrella']];
+const ENAV=[['e-home',"Aujourd'hui",'sun'],['e-planning','Planning','calendar'],['e-taches','Tâches','check'],['e-messages','Messages','megaphone'],['e-stock','Stock','box'],['e-conges','Congés','umbrella']];
 let eTab='e-home';
 function navSvg(n){return `<svg viewBox="0 0 24 24">${ICONS[n]}</svg>`;}
 
@@ -770,14 +802,21 @@ function emptyState(name){
       {id:uid(),name:'Fermeture',items:[{id:uid(),text:'Nettoyer les plans de travail'},{id:uid(),text:'Noter les invendus'},{id:uid(),text:'Compter la caisse'},{id:uid(),text:"Activer l'alarme"}]}
     ],
     done:{},equipments:[{name:'Chambre froide',min:0,max:4},{name:'Vitrine réfrigérée',min:0,max:4},{name:'Congélateur',min:-30,max:-18}],
-    temps:[],stock:[],sales:{},settings:{charges:42,goal:0,tempHour:10,notify:false},punches:[],losses:[],templates:[],products:[],lossDays:{},reports:[],availability:{},swaps:[]};
+    temps:[],stock:[],sales:{},settings:{charges:42,goal:0,tempHour:10,notify:false,rules:{idcc:'',maxDay:600,minRest:660,maxWeek:2880,pauseAfter:360,pauseMin:20},holidays:true,hours:null,staffing:[],notifyKinds:{}},punches:[],losses:[],templates:[],products:[],lossDays:{},reports:[],availability:{},swaps:[],log:[],orders:[],inventories:[],messages:[],availDates:{}};
 }
-function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});s.settings=Object.assign({},e.settings,(d&&d.settings)||{});['postes','employees','leaves','notes','temps','stock','lists','equipments','punches','losses','templates','products','reports','swaps'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales','lossDays','availability'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
+function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});s.settings=Object.assign({},e.settings,(d&&d.settings)||{});s.settings.rules=Object.assign({},e.settings.rules,s.settings.rules||{});['postes','employees','leaves','notes','temps','stock','lists','equipments','punches','losses','templates','products','reports','swaps','log','orders','inventories','messages'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales','lossDays','availability','availDates'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
 
 const CFG=window.MONKIOSK_CONFIG||{};
 let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,punchCode='',isAdmin=false,pendingPunch=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false,editSeq=0,base=null,eView=null,memberships=[],members=[],joinCode='';
 const cacheKey=()=>'monkiosk-cache-'+(company?company.id:'x');
 function readCache(){try{const r=localStorage.getItem(cacheKey());return r?JSON.parse(r):null;}catch(e){return null;}}
+function hexToRgb(h){const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return null;const n=parseInt(m[1],16);return [n>>16&255,n>>8&255,n&255];}
+function applyBranding(b){const root=document.documentElement,rgb=hexToRgb(b&&b.accent);
+  if(rgb){root.style.setProperty('--accent',b.accent);root.style.setProperty('--accent-soft',`rgba(${rgb.join(',')},.16)`);root.style.setProperty('--accent-ink','#ffffff');}
+  else{root.style.removeProperty('--accent');root.style.removeProperty('--accent-soft');root.style.removeProperty('--accent-ink');}
+  const brand=document.querySelector('.nav-brand');if(brand){const old=brand.querySelector('img.logo');if(b&&b.logo){brand.querySelector('svg').style.display='none';if(old)old.src=b.logo;else brand.insertAdjacentHTML('afterbegin',`<img class="logo" src="${b.logo}" alt="">`);}else{brand.querySelector('svg').style.display='';if(old)old.remove();}}}
+function applyTheme(){let t='auto';try{t=localStorage.getItem('monkiosk-theme')||'auto';}catch(e){}if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;}
+applyTheme();
 function setSync(st){const m={ok:['Synchronisé','ok'],saving:['Enregistrement…','info'],error:['Non synchronisé','crit'],offline:['Hors ligne','warn'],demo:['Démo','warn']}[st];const el=$('sync');el.textContent=m[0];el.className='chip '+m[1];const t=$('nav-sync');if(t){t.textContent=m[0];$('nav-sync-dot').className='sync-dot '+m[1];}}
 function save(){
   if(mode!=='cloud')return;
@@ -819,35 +858,78 @@ async function pushRemote(){
   saving=false;
 }
 function commit(){save();render();}
+function logWho(){if(company&&company.role==='manager'){const m=members.find(x=>x.user_id===(user&&user.id));if(m)return empName(m.employee_id)+' (manager)';}return (user&&user.email||'Responsable').split('@')[0];}
+function addLog(text){if(mode!=='cloud'||!state)return;state.log=(state.log||[]).concat([{at:new Date().toISOString(),who:logWho(),text}]).slice(-400);}
+function done(msg,logText){toast(msg);addLog(logText||msg);}
 // Deuxième clic pour confirmer une action difficile à annuler
 function armed(btn,label){if(btn.dataset.armed==='1')return true;const old=btn.textContent;btn.dataset.armed='1';btn.textContent=label;btn.classList.add('danger');
   setTimeout(()=>{if(btn.isConnected&&btn.dataset.armed==='1'){btn.dataset.armed='';btn.textContent=old;}},3500);return false;}
-let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
+let tt;function toast(m){const t=$('toast');if(mode==='employee'&&typeof translateText==='function')m=translateText(m);t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
 function empName(id){const e=state.employees.find(x=>x.id===id);return e?e.name:'Ancien salarié';}
+
+/* ---------- Règles de travail et conventions collectives ---------- */
+// Valeurs indicatives (Code du travail et conventions) : chaque commerce peut les ajuster.
+const CONVENTIONS=[
+  {idcc:'',name:'Code du travail (par défaut)',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'843',name:'Boulangerie-pâtisserie artisanale',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'1267',name:'Pâtisserie',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'1979',name:'Hôtels, cafés, restaurants (HCR)',maxDay:690,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'1501',name:'Restauration rapide',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'2216',name:'Commerce de détail et de gros à prédominance alimentaire',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'1517',name:'Commerce de détail non alimentaire',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20},
+  {idcc:'2596',name:'Coiffure',maxDay:600,maxWeek:2880,minRest:660,pauseAfter:360,pauseMin:20}
+];
+function rules(){return Object.assign({maxDay:600,minRest:660,maxWeek:2880,pauseAfter:360,pauseMin:20},(state&&state.settings&&state.settings.rules)||{});}
+// Jours fériés en France métropolitaine
+const _hol={};
+function holidays(y){if(_hol[y])return _hol[y];
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),kk=c%4,l=(32+2*e+2*i-h-kk)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  const easter=new Date(y,mo-1,da),out={};
+  [[1,1,"Jour de l'an"],[5,1,'Fête du Travail'],[5,8,'Victoire 1945'],[7,14,'Fête nationale'],[8,15,'Assomption'],[11,1,'Toussaint'],[11,11,'Armistice'],[12,25,'Noël']].forEach(([mm,dd,n])=>out[k(new Date(y,mm-1,dd))]=n);
+  out[k(addDays(easter,1))]='Lundi de Pâques';out[k(addDays(easter,39))]='Ascension';out[k(addDays(easter,50))]='Lundi de Pentecôte';
+  return _hol[y]=out;}
+function holiday(key){if(state&&state.settings&&state.settings.holidays===false)return null;return holidays(+key.slice(0,4))[key]||null;}
+// Couverture : nombre de personnes présentes par demi-heure
+function coverage(ws,d){const c=new Array(48).fill(0),w=state.weeks[k(ws)]||{};
+  state.employees.forEach(e=>{const x=(w[e.id]||{})[d];if(!x)return;const a=Math.floor(mins(x.s)/30),len=Math.ceil(dur(x.s,x.e)/30);for(let i=a;i<a+len&&i<48;i++)c[i]++;});return c;}
+const slotT=i=>String(Math.floor(i/2)).padStart(2,'0')+':'+(i%2?'30':'00');
+function ranges(slots){const out=[];let st=null;slots.forEach((v,i)=>{if(v&&st===null)st=i;if(!v&&st!==null){out.push([st,i]);st=null;}});if(st!==null)out.push([st,slots.length]);return out;}
+function coverageAlerts(ws){
+  const out=[],H=state.settings.hours,S=state.settings.staffing||[];
+  for(let d=0;d<7;d++){const c=coverage(ws,d);
+    if(H&&H[d]&&!H[d].closed&&H[d].open&&H[d].close){const a=Math.floor(mins(H[d].open)/30),b=Math.ceil(mins(H[d].close)/30);
+      ranges(c.map((v,i)=>i>=a&&i<b&&v===0)).forEach(([x,y])=>out.push({lvl:'crit',tag:'Ouverture',txt:`Boutique sans personne le ${DAYS_LONG[d].toLowerCase()} de ${slotT(x)} à ${slotT(y)}.`,go:'planning'}));}
+    S.filter(r=>r.days.includes(d)).forEach(r=>{const a=Math.floor(mins(r.start)/30),b=Math.ceil(mins(r.end)/30);
+      ranges(c.map((v,i)=>i>=a&&i<b&&v>0&&v<r.min)).forEach(([x,y])=>out.push({lvl:'warn',tag:'Effectif',txt:`Sous-effectif le ${DAYS_LONG[d].toLowerCase()} de ${slotT(x)} à ${slotT(y)} (${r.min} personne${r.min>1?'s':''} prévue${r.min>1?'s':''}).`,go:'planning'}));});}
+  return out;}
 
 /* ---------- Analysis ---------- */
 function leaveOn(emp,key){return state.leaves.find(l=>l.emp===emp&&l.status==='validé'&&l.from<=key&&l.to>=key);}
 function analyse(ws){
-  const w=state.weeks[k(ws)]||{},out=[],flags=new Set(),totals={};
+  const w=state.weeks[k(ws)]||{},out=[],flags=new Set(),totals={},RU=rules();
   state.employees.forEach(emp=>{
     const sh=w[emp.id]||{};let total=0;const n=esc(emp.name);
     for(let d=0;d<7;d++){
       const x=sh[d];if(!x)continue;
       const len=dur(x.s,x.e);total+=len;
+      const adt=feat('dispos')&&((state.availDates||{})[emp.id]||{})[k(addDays(ws,d))];
+      if(adt&&adt.type==='off')out.push({lvl:'warn',tag:'Dispo',txt:`<b>${n}</b> a indiqué ne pas être disponible le ${fmtDM.format(addDays(ws,d))}.`,go:'planning'});
       const av=feat('dispos')&&((state.availability||{})[emp.id]||{})[d];
-      if(av&&av.off)out.push({lvl:'warn',tag:'Dispo',txt:`<b>${n}</b> a indiqué ne pas être disponible le ${DAYS_LONG[d].toLowerCase()}${av.note?' ('+esc(av.note)+')':''}.`,go:'planning'});
+      if(av&&av.off&&!(adt&&adt.type==='extra'))out.push({lvl:'warn',tag:'Dispo',txt:`<b>${n}</b> a indiqué ne pas être disponible le ${DAYS_LONG[d].toLowerCase()}${av.note?' ('+esc(av.note)+')':''}.`,go:'planning'});
       const lv=leaveOn(emp.id,k(addDays(ws,d)));
       if(lv){out.push({lvl:'crit',tag:'Absence',txt:`<b>${n}</b> est planifié le ${DAYS_LONG[d].toLowerCase()} alors qu'il est absent (${lv.type.toLowerCase()}).`,go:'planning'});flags.add(emp.id+'-'+d);}
-      if(len>600){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> travaille ${fh(len)} le ${DAYS_LONG[d].toLowerCase()}. La limite est de 10 h par jour.`,go:'planning'});flags.add(emp.id+'-'+d);}
+      if(len>RU.maxDay){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> travaille ${fh(len)} le ${DAYS_LONG[d].toLowerCase()}. La limite est de ${fh(RU.maxDay)} par jour.`,go:'planning'});flags.add(emp.id+'-'+d);}
+      const hk=k(addDays(ws,d)),hn=holiday(hk);if(hn)out.push({lvl:'warn',tag:'Férié',txt:`<b>${n}</b> travaille le ${DAYS_LONG[d].toLowerCase()} (${hn})${hk.slice(5)==='05-01'?' : travail payé double le 1er mai':' : vérifie la majoration prévue par ta convention'}.`,go:'planning'});
       const nx=d<6?sh[d+1]:((state.weeks[k(addDays(ws,7))]||{})[emp.id]||{})[0];
       if(nx){const gap=1440+mins(nx.s)-(mins(x.s)+len);
-        if(gap<660){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> n'a que ${fh(gap)} de repos entre ${DAYS_LONG[d].toLowerCase()} et ${DAYS_LONG[(d+1)%7].toLowerCase()}${d===6?' suivant':''}. Il faut au moins 11 h.`,go:'planning'});flags.add(emp.id+'-'+(d<6?d+1:d));}}
+        if(gap<RU.minRest){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> n'a que ${fh(gap)} de repos entre ${DAYS_LONG[d].toLowerCase()} et ${DAYS_LONG[(d+1)%7].toLowerCase()}${d===6?' suivant':''} (minimum ${fh(RU.minRest)}).`,go:'planning'});flags.add(emp.id+'-'+(d<6?d+1:d));}}
     }
     totals[emp.id]=total;const c=emp.contract*60;
-    if(total>2880)out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> dépasse 48 h sur la semaine (${fh(total)}).`,go:'planning'});
+    if(total>RU.maxWeek)out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> dépasse ${fh(RU.maxWeek)} sur la semaine (${fh(total)}).`,go:'planning'});
     else if(total>c)out.push({lvl:'warn',tag:'Heures sup',txt:`<b>${n}</b> fait ${fh(total-c)} de plus que son contrat de ${emp.contract} h.`,go:'planning'});
     else if(total<c&&total>0)out.push({lvl:'warn',tag:'Contrat',txt:`<b>${n}</b> a ${fh(c-total)} de moins que son contrat de ${emp.contract} h.`,go:'planning'});
   });
+  coverageAlerts(ws).forEach(x=>out.push(x));
   out.sort((a,b)=>(a.lvl==='crit'?0:1)-(b.lvl==='crit'?0:1));
   return {out,flags,totals};
 }
@@ -886,20 +968,23 @@ const MODULES=[
   {key:'dispos',name:'Disponibilités',desc:'Les salariés indiquent leurs jours indisponibles, visibles dans le planning.'},
   {key:'signalements',name:'Signalements',desc:"Les salariés signalent une panne, une casse ou un souci d'hygiène."},
   {key:'echanges',name:'Échanges de créneaux',desc:'Les salariés demandent un remplaçant, un collègue se propose, tu valides.'},
+  {key:'messagerie',name:"Messagerie d'équipe",desc:"Un fil de discussion entre l'équipe et le responsable."},
   {key:'semaines',name:'Semaines types',desc:'Modèles de planning réutilisables.'},
   {key:'rappels',name:'Rappels',desc:'Alertes si les relevés et les checklists ne sont pas faits.'},
   {key:'espace',name:'Espace salarié',desc:'Comptes pour les salariés : planning, congés, tâches, pertes.',premium:true},
   {key:'badgeuse',name:'Badgeuse',desc:'Pointage des salariés avec le code du jour.',premium:true},
   {key:'couts',name:'Coût salarial',desc:'Coût du planning et ratio masse salariale / CA.',premium:true},
   {key:'registre',name:"Registre d'hygiène PDF",desc:'Export mensuel pour les contrôles sanitaires.',premium:true},
-  {key:'stats',name:'Statistiques mensuelles',desc:'12 mois de CA, objectif et projection.',premium:true}
+  {key:'stats',name:'Statistiques mensuelles',desc:'12 mois de CA, objectif et projection.',premium:true},
+  {key:'rentabilite',name:'Rentabilité',desc:'CA moins masse salariale, pertes et achats, par semaine et par mois.',premium:true}
 ];
 function unlocked(key){const m=MODULES.find(x=>x.key===key);if(!m||!m.premium||mode==='demo')return true;return !!(company&&company.features&&company.features[key]===true);}
-function feat(key){if(mode==='demo')return true;if(!unlocked(key))return false;return !(state&&state.settings&&state.settings.modules&&state.settings.modules[key]===false);}
+const MANAGER_HIDDEN=['ventes','couts','stats','rentabilite'];
+function feat(key){if(mode==='demo')return true;if(company&&company.role==='manager'&&MANAGER_HIDDEN.includes(key))return false;if(!unlocked(key))return false;return !(state&&state.settings&&state.settings.modules&&state.settings.modules[key]===false);}
 function gate(el,on){if(el)el.hidden=!on;}
 function applyGates(){
   const card=id=>$(id)&&$(id).closest('.card');
-  gate(card('leaves'),feat('conges'));gate($('reports-card'),feat('signalements'));gate($('swaps-card'),feat('echanges'));
+  gate(card('leaves'),feat('conges'));gate($('reports-card'),feat('signalements'));gate($('msg-card'),feat('messagerie'));gate($('swaps-card'),feat('echanges'));
   gate(card('notes'),feat('annonces'));gate(card('home-note'),feat('annonces'));
   gate($('checklists'),feat('taches'));gate($('list-actions'),feat('taches'));gate(card('home-tasks'),feat('taches'));
   gate(card('temps'),feat('hygiene'));gate($('register-btn'),feat('registre'));
@@ -911,6 +996,7 @@ function applyGates(){
   gate(card('punches'),feat('badgeuse'));
   gate($('plan-cost'),feat('couts'));
   gate($('export').closest('.card'),mode==='cloud');
+  gate($('profit-card'),feat('rentabilite')&&feat('ventes'));gate($('log-card'),mode==='cloud');
   const nav=v=>document.querySelector('.nav [data-view="'+v+'"]').parentElement;
   gate(nav('taches'),feat('taches')||feat('hygiene'));gate(nav('stock'),feat('stock'));gate(nav('ventes'),feat('ventes')||feat('pertes'));
   const cur=document.querySelector('.nav [data-view="'+view+'"]');if(cur&&cur.parentElement.hidden){view='accueil';renderNav();}
@@ -925,7 +1011,7 @@ function renderNav(){
   $('viewtitle').textContent=VIEWS[view];
   const badge=(id,n)=>{const b=$(id);b.hidden=!n;b.textContent=n;};
   badge('b-planning',analyse(thisMonday).out.filter(a=>a.lvl==='crit').length);
-  badge('b-equipe',(feat('conges')?pendingLeaves().length:0)+(feat('signalements')?state.reports.filter(r=>r.status==='ouvert').length:0)+(feat('echanges')?state.swaps.filter(x=>x.status==='proposé').length:0));
+  badge('b-equipe',(feat('conges')?pendingLeaves().length:0)+(feat('signalements')?state.reports.filter(r=>r.status==='ouvert').length:0)+(feat('echanges')?state.swaps.filter(x=>x.status==='proposé').length:0)+(feat('messagerie')&&view!=='equipe'?unreadMsgs(state.messages||[],'owner'):0));
   badge('b-taches',feat('hygiene')?todayTemps().filter(t=>!tempOk(t)).length:0);
   badge('b-stock',feat('stock')?lowStock().length:0);
 }
@@ -954,7 +1040,7 @@ function renderPlanning(){
   const w=state.weeks[k(weekStart)]||{},{out,flags,totals}=analyse(weekStart);
   $('plan-alerts').innerHTML=alertHTML(out,false);
   let h='<thead><tr><th class="sticky">Équipe</th>';
-  for(let d=0;d<7;d++){const dt=addDays(weekStart,d);h+=`<th class="${k(dt)===todayKey?'today':''}">${DAYS[d]}<span class="date">${fmtDay.format(dt)}</span></th>`;}
+  for(let d=0;d<7;d++){const dt=addDays(weekStart,d),hn=holiday(k(dt)),H=state.settings.hours,cl=H&&H[d]&&H[d].closed;h+=`<th class="${k(dt)===todayKey?'today':''}">${DAYS[d]}<span class="date">${fmtDay.format(dt)}</span>${hn?`<span class="chip warn" style="font-size:.6rem;letter-spacing:0;text-transform:none">${esc(hn)}</span>`:cl?'<span class="muted" style="font-size:.65rem;text-transform:none;letter-spacing:0">Fermé</span>':''}</th>`;}
   h+='<th>Total</th></tr></thead><tbody>';
   const present=[0,0,0,0,0,0,0];
   state.employees.forEach(emp=>{
@@ -963,22 +1049,45 @@ function renderPlanning(){
     for(let d=0;d<7;d++){const x=sh[d],lv=leaveOn(emp.id,k(addDays(weekStart,d)));
       if(x){present[d]++;h+=`<td><button type="button" class="cell ${pcls(x.p)} ${flags.has(emp.id+'-'+d)?'flag':''}" data-e="${emp.id}" data-d="${d}" aria-label="${esc(emp.name)}, ${DAYS_LONG[d]}, ${x.s} à ${x.e}"><span class="hrs">${x.s}–${x.e}</span><span class="post">${esc(x.p)}</span></button></td>`;}
       else if(lv)h+=`<td><button type="button" class="cell p-leave" data-e="${emp.id}" data-d="${d}"><span class="post">${esc(lv.type)}</span></button></td>`;
-      else{const av=feat('dispos')&&((state.availability||{})[emp.id]||{})[d];
+      else{const ad=feat('dispos')&&((state.availDates||{})[emp.id]||{})[k(addDays(weekStart,d))];if(ad){h+=`<td><button type="button" class="cell ${ad.type==='extra'?'extra':'unavail'}" data-e="${emp.id}" data-d="${d}" title="${esc(ad.note||'')}"><span class="post">${ad.type==='extra'?'Dispo +':'Indispo'}</span></button></td>`;continue;}
+        const av=feat('dispos')&&((state.availability||{})[emp.id]||{})[d];
         h+=av&&av.off?`<td><button type="button" class="cell unavail" data-e="${emp.id}" data-d="${d}" title="${esc(av.note||'')}"><span class="post">Indispo</span></button></td>`:`<td><button type="button" class="cell empty" data-e="${emp.id}" data-d="${d}" aria-label="Ajouter un créneau à ${esc(emp.name)}, ${DAYS_LONG[d]}">Repos</button></td>`;}
     }
     const t=totals[emp.id],c=emp.contract*60;
-    const chip=t>2880?'<span class="chip crit">+48 h</span>':t>c?`<span class="chip warn">+${fh(t-c)}</span>`:t<c?`<span class="chip warn">−${fh(c-t)}</span>`:'<span class="chip ok">Pile</span>';
+    const chip=t>rules().maxWeek?`<span class="chip crit">+${fh(rules().maxWeek)}</span>`:t>c?`<span class="chip warn">+${fh(t-c)}</span>`:t<c?`<span class="chip warn">−${fh(c-t)}</span>`:'<span class="chip ok">Pile</span>';
     h+=`<td class="total"><div class="num">${fh(t)}</div>${chip}</td></tr>`;
   });
   h+='</tbody><tfoot><tr><th class="sticky">Présents</th>'+present.map(n=>`<td>${n}</td>`).join('')+'<td></td></tr></tfoot>';
   $('grid').innerHTML=h;
   {const hrs=Object.values(totals).reduce((p,c)=>p+c,0),gross=state.employees.reduce((p,e)=>p+(totals[e.id]||0)/60*(e.rate||0),0),ch=state.settings.charges||0;
    $('plan-cost').innerHTML=`Heures planifiées : <strong>${fh(hrs)}</strong>`+(hasRates()?` · Coût estimé : <strong>${eur.format(gross*(1+ch/100))}</strong> <span class="muted">(salaires bruts ${eur.format(gross)} + charges ${ch} %)</span>`:` · <span class="muted">Ajoute le taux horaire de tes salariés pour voir le coût du planning.</span>`);}
+  renderDayView();
   $('legend-postes').innerHTML=postes().map(p=>`<span class="pc${p.color}">${esc(p.name)}</span>`).join('');
   const sel=$('share-emp'),cur=sel.value;
   sel.innerHTML=state.employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
   if(state.employees.some(e=>e.id===cur))sel.value=cur;
   renderShare();
+}
+let planView='week',planDay=(today.getDay()+6)%7;
+function renderDayView(){
+  const on=planView==='day';$('weekview').hidden=on;$('dayview').hidden=!on;$('pv-days').hidden=!on;
+  document.querySelectorAll('[data-pview]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.pview===planView));
+  if(!on)return;
+  $('pv-days').innerHTML=DAYS.map((x,d)=>`<button type="button" data-pday="${d}" aria-pressed="${d===planDay}">${x} ${fmtDay.format(addDays(weekStart,d))}</button>`).join('');
+  const d=planDay,w=state.weeks[k(weekStart)]||{},H=(state.settings.hours||{})[d],rows=state.employees.map(e=>({e,x:(w[e.id]||{})[d]})).filter(r=>r.x);
+  let h0=5*60,h1=22*60;if(H&&!H.closed){h0=Math.min(h0,mins(H.open));h1=Math.max(h1,mins(H.close));}
+  rows.forEach(r=>{h0=Math.min(h0,mins(r.x.s));const en=mins(r.x.s)+dur(r.x.s,r.x.e);h1=Math.max(h1,Math.min(en,1440));});
+  h0=Math.floor(h0/60)*60;h1=Math.ceil(h1/60)*60;const span=h1-h0,pct=m=>((m-h0)/span*100);
+  const c=coverage(weekStart,d),S=(state.settings.staffing||[]).filter(r=>r.days.includes(d));
+  const need=i=>{let n=0;const t=i*30;S.forEach(r=>{if(t>=mins(r.start)&&t<mins(r.end))n=Math.max(n,r.min);});if(H&&!H.closed&&t>=mins(H.open)&&t<mins(H.close))n=Math.max(n,1);return n;};
+  const hours=[];for(let t=h0;t<h1;t+=60)hours.push(t);
+  const cov=hours.map(t=>{const i=t/30,n=Math.min(c[i]||0,c[i+1]??c[i]),r=Math.max(need(i),need(i+1));return `<span class="${r?(n===0?'zero':n<r?'low':'ok'):''}" title="${slotT(i)} : ${n} personne${n>1?'s':''}${r?' / '+r+' prévue'+(r>1?'s':''):''}">${n}</span>`;}).join('');
+  const hn=holiday(k(addDays(weekStart,d)));
+  $('dayview').innerHTML=`<div class="card-head"><h2 class="hi">${ic('clock')}${DAYS_LONG[d]} ${fmtDM.format(addDays(weekStart,d))}</h2><span class="muted small">${H?(H.closed?'Fermé':'Ouvert de '+H.open+' à '+H.close):''}${hn?' · '+esc(hn):''}</span></div>
+    <div class="dayline"><span></span><div class="scale">${hours.filter((t,i)=>i%2===0).map(t=>`<span>${t/60} h</span>`).join('')}</div></div>
+    ${rows.length?rows.sort((a,b)=>mins(a.x.s)-mins(b.x.s)).map(({e,x})=>{const st=mins(x.s),len=dur(x.s,x.e);return `<div class="dayline"><button type="button" class="emp" data-e="${e.id}" data-d="${d}" style="min-width:0;padding:2px 4px"><strong>${esc(e.name)}</strong></button><div class="track"><button type="button" class="bar cell ${pcls(x.p)}" data-e="${e.id}" data-d="${d}" style="left:${pct(st)}%;width:${Math.max(4,Math.min(100-pct(st),len/span*100))}%;min-height:0;border:0">${x.s}–${x.e} · ${esc(x.p)}</button></div></div>`;}).join(''):'<p class="empty-note">Personne n\'est planifié ce jour-là.</p>'}
+    <div class="dayline"><span class="muted small" style="font-weight:700">Présents</span><div class="cov" style="grid-template-columns:repeat(${hours.length},1fr)">${cov}</div></div>
+    <p class="muted small" style="margin:0">Vert : effectif suffisant · orange : sous-effectif · rouge : boutique ouverte sans personne.</p>`;
 }
 function renderShare(){
   const emp=state.employees.find(e=>e.id===$('share-emp').value);
@@ -1005,7 +1114,8 @@ function renderTeam(){
   const tot=analyse(thisMonday).totals;
   $('staff').innerHTML=state.employees.map(e=>{const acc=members.some(m=>m.employee_id===e.id);const wk=weekWorked(e.id);
     return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${e.phone?' · '+esc(e.phone):''}${e.email?' · '+esc(e.email):''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
-  renderPunches();renderAccounts();renderRecap();
+  renderPunches();renderAccounts();renderRecap();renderLog();
+  {const th=$('o-thread'),atB=th.scrollTop+th.clientHeight>=th.scrollHeight-20;th.innerHTML=threadHTML(state.messages||[],'owner');if(atB||!th.dataset.init){th.scrollTop=th.scrollHeight;th.dataset.init='1';}if(view==='equipe')markSeen(state.messages||[]);}
   {const SW=[...state.swaps].filter(x=>x.status==='proposé'||x.status==='ouvert'||x.date>=k(addDays(today,-30))).sort((a,b)=>({proposé:0,ouvert:1}[a.status]??2)-({proposé:0,ouvert:1}[b.status]??2)||a.date.localeCompare(b.date));
    const when=x=>`${DAYS_LONG[(fromKey(x.date).getDay()+6)%7]} ${fmtDM.format(fromKey(x.date))} · ${x.s}–${x.e}`;
    $('swaps').innerHTML=SW.map(x=>`<li style="flex-wrap:wrap"><span class="chip ${x.status==='proposé'?'info':x.status==='validé'?'ok':x.status==='refusé'?'crit':'warn'}">${{ouvert:'Recherche',proposé:'À valider',validé:'Validé',refusé:'Refusé'}[x.status]||x.status}</span>
@@ -1013,6 +1123,16 @@ function renderTeam(){
      ${x.status==='proposé'?`<button type="button" class="btn sm primary" data-swapok="${x.id}">Valider l'échange</button><button type="button" class="btn sm danger" data-swapno="${x.id}">Refuser</button>`:x.status==='ouvert'?`<button type="button" class="btn sm danger" data-swapno="${x.id}">Refuser</button>`:`<button type="button" class="x" data-swapdel="${x.id}" aria-label="Supprimer">×</button>`}</li>`).join('')||'<li class="empty-note">Aucun échange en cours.</li>';}
   const RP=[...state.reports].sort((a,b)=>(a.status==='ouvert'?0:1)-(b.status==='ouvert'?0:1)||b.at.localeCompare(a.at)).filter(r=>r.status==='ouvert'||r.at.slice(0,10)>=k(addDays(today,-30)));
   $('reports').innerHTML=RP.map(r=>`<li style="flex-wrap:wrap"><span class="chip ${r.status==='ouvert'?'warn':'ok'}">${esc(r.kind)}</span><span class="grow"><strong>${esc(r.text)}</strong><span class="muted small">${esc(empName(r.emp))} · ${fmtShort.format(new Date(r.at))} à ${hm(r.at)}${r.status==='ouvert'?'':' · traité'}</span></span>${r.status==='ouvert'?`<button type="button" class="btn sm" data-rdone="${r.id}">Marquer comme traité</button>`:''}<button type="button" class="x" data-rdel="${r.id}" aria-label="Supprimer">×</button></li>`).join('')||'<li class="empty-note">Aucun signalement.</li>';
+}
+function periodFigures(from,to){let ca=0,mass=0,loss=0,buy=0;
+  for(let d=new Date(from);d<=to;d=addDays(d,1)){const key=k(d),s2=state.sales[key];if(s2)ca+=s2.ca;mass+=dayCost(d);loss+=lossValue(key);}
+  state.orders.forEach(o=>{if(o.status==='reçue'&&o.receivedAt){const dt=day0(new Date(o.receivedAt));if(dt>=from&&dt<=to)buy+=o.items.reduce((p,i)=>p+(i.price||0)*(i.received??i.qty),0);}});
+  return {ca,mass,loss,buy,res:ca-mass-loss-buy};}
+function renderProfit(){
+  const rows=[];for(let i=5;i>=0;i--){const from=addDays(thisMonday,-7*i),to=addDays(from,6);rows.push({label:i?`Sem. du ${fmtShort.format(from)}`:'Cette semaine',...periodFigures(from,to<today?to:today)});}
+  const m0=new Date(today.getFullYear(),today.getMonth(),1),m1=new Date(today.getFullYear(),today.getMonth()-1,1),m1e=addDays(m0,-1);
+  rows.push({label:'Mois précédent',...periodFigures(m1,m1e),sep:true});rows.push({label:'Ce mois-ci',...periodFigures(m0,today)});
+  $('profit').innerHTML=`<thead><tr><th>Période</th><th style="text-align:right">CA</th><th style="text-align:right">Masse salariale</th><th style="text-align:right">Pertes</th><th style="text-align:right">Achats</th><th style="text-align:right">Résultat</th></tr></thead><tbody>${rows.map(r=>`<tr${r.sep?' style="border-top:2px solid var(--line)"':''}><td><strong>${r.label}</strong></td><td class="num">${eur.format(r.ca)}</td><td class="num">${eur.format(r.mass)}</td><td class="num">${eur.format(r.loss)}</td><td class="num">${eur.format(r.buy)}</td><td class="num" style="color:${r.res>=0?'var(--ok)':'var(--crit)'};font-weight:700">${eur.format(r.res)}</td></tr>`).join('')}</tbody>`;
 }
 function monthRecap(month){
   const [y,m]=month.split('-').map(Number),dim=new Date(y,m,0).getDate();
@@ -1030,6 +1150,12 @@ $('recap-month').onchange=renderRecap;
 $('recap-csv').onclick=()=>{const month=$('recap-month').value||todayKey.slice(0,7),rows=monthRecap(month),pt=feat('badgeuse'),hh=v=>`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`;
   const lines=[['Salarié','Poste','Contrat (h/sem.)','Jours planifiés','Heures prévues',...(pt?['Heures pointées']:[])].join(';'),...rows.map(r=>[r.e.name,r.e.poste,r.e.contract,r.days,hh(r.plan),...(pt?[hh(r.worked)]:[])].join(';'))];
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=`heures-${month}.csv`;document.body.appendChild(a);a.click();a.remove();toast('Récapitulatif exporté');};
+function renderLog(){
+  const f=($('log-filter').value||'').toLowerCase(),L=[...(state.log||[])].reverse().filter(x=>!f||(x.who+' '+x.text).toLowerCase().includes(f)).slice(0,60);
+  $('log').innerHTML=L.map(x=>`<li><span class="grow"><strong>${esc(x.who)}</strong> ${esc(x.text)}<span class="muted small">${fmtShort.format(new Date(x.at))} à ${hm(x.at)}</span></span></li>`).join('')||'<li class="empty-note">Aucune modification enregistrée pour l\'instant.</li>';
+}
+$('log-filter').oninput=()=>renderLog();
+$('o-send').onclick=()=>{const txt=$('o-msg').value.trim();if(!txt)return;state.messages=(state.messages||[]).concat([{id:uid(),from:'owner',name:company&&company.role==='manager'?logWho():'Responsable',at:new Date().toISOString(),text:txt}]).slice(-300);$('o-msg').value='';markSeen(state.messages);commit();};
 function renderPostes(){
   const used={};Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{used[x.p]=(used[x.p]||0)+1;})));
   $('postes').innerHTML=postes().map((p,i)=>`<li><span class="chip pc${p.color}">${esc(p.name)}</span><span class="grow muted small">${used[p.name]?used[p.name]+' créneau'+(used[p.name]>1?'x':''):'Pas encore utilisé'}</span><button type="button" class="btn sm" data-poste="${i}">Modifier</button></li>`).join('');
@@ -1059,13 +1185,43 @@ function renderStock(){
   const groups=stockGroups(state.stock,stockFilter);
   $('stock').innerHTML=groups.map(([c,items])=>`${cats.length?`<div class="group-title">${ic('folder')}${esc(c)} <span class="count">· ${items.length}</span></div>`:''}<ul class="list">${items.sort((a,b)=>((a.qty<a.min)?0:1)-((b.qty<b.min)?0:1)||a.name.localeCompare(b.name,'fr')).map(x=>{const low=x.qty<x.min;
     return `<li style="flex-wrap:wrap"><button type="button" class="emp" data-stock="${x.id}" style="flex:1;min-width:160px;width:auto"><strong>${esc(x.name)}</strong><small>${esc(x.unit)} · seuil ${num(x.min)} · ${esc(x.supplier)}</small></button>
-    ${low?'<span class="chip crit">À commander</span>':'<span class="chip ok">OK</span>'}
+    ${low?(openOrderItems()[x.id]?'<span class="chip info">En commande</span>':'<span class="chip crit">À commander</span>'):'<span class="chip ok">OK</span>'}
     <span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="icon-btn" data-delta="${x.id}:-1" aria-label="Retirer 1">−</button><span class="qty">${num(x.qty)}</span><button type="button" class="icon-btn" data-delta="${x.id}:1" aria-label="Ajouter 1">+</button></span></li>`;}).join('')}</ul>`).join('')||'<p class="empty-note">Ajoute ton premier article.</p>';
+  renderOrders();renderStockValue();
   const low=lowStock();
   if(!low.length){$('order-text').textContent='Rien à commander, tout est au-dessus des seuils.';return;}
   const by={};low.forEach(s=>{(by[s.supplier]=by[s.supplier]||[]).push(s);});
   $('order-text').textContent=Object.entries(by).map(([sup,items])=>`${sup}\n`+items.map(s=>`- ${s.name} : ${num(Math.ceil(s.min*2-s.qty))} ${s.unit}`).join('\n')).join('\n\n');
 }
+function openOrderItems(){const m={};state.orders.filter(o=>o.status!=='reçue').forEach(o=>o.items.forEach(i=>m[i.sid]=true));return m;}
+function renderOrders(){
+  const O=[...state.orders].filter(o=>o.status!=='reçue'||o.at.slice(0,10)>=k(addDays(today,-30))).sort((a,b)=>(a.status==='reçue'?1:0)-(b.status==='reçue'?1:0)||b.at.localeCompare(a.at));
+  $('orders').innerHTML=O.map(o=>{const tot=o.items.reduce((p,i)=>p+(i.price||0)*i.qty,0);
+    return `<li style="flex-wrap:wrap"><span class="chip ${o.status==='reçue'?'ok':o.status==='envoyée'?'info':'warn'}">${{'à envoyer':'À envoyer',envoyée:'Envoyée',reçue:'Reçue'}[o.status]||o.status}</span><span class="grow"><strong>${esc(o.supplier)}</strong><span class="muted small">${o.items.length} article${o.items.length>1?'s':''}${tot?' · '+eur2.format(tot):''} · ${fmtShort.format(new Date(o.at))}</span></span>
+    ${o.status!=='reçue'?`<button type="button" class="btn sm" data-ocopy="${o.id}">Copier</button>${o.status==='à envoyer'?`<button type="button" class="btn sm" data-osent="${o.id}">Marquer envoyée</button>`:''}<button type="button" class="btn sm primary" data-orecv="${o.id}">Réceptionner</button>`:''}<button type="button" class="x" data-odel="${o.id}" aria-label="Supprimer">×</button></li>`;}).join('')||'<li class="empty-note">Aucune commande en cours.</li>';
+}
+function renderStockValue(){
+  const tot=state.stock.reduce((p,x)=>p+(x.cost||0)*x.qty,0),withCost=state.stock.filter(x=>x.cost>0).length,byCat={};
+  state.stock.forEach(x=>{const c=(x.cat||'').trim()||'Sans catégorie';byCat[c]=(byCat[c]||0)+(x.cost||0)*x.qty;});
+  const last=[...(state.inventories||[])].pop();
+  $('stock-value').innerHTML=`<div class="kpis"><div class="kpi"><span class="muted small">Valeur totale</span><span class="big">${withCost?eur.format(tot):'—'}</span><span class="muted small">${withCost?withCost+' article'+(withCost>1?'s':'')+' avec un prix d\'achat':'Ajoute le prix d\'achat dans chaque article'}</span></div>
+    <div class="kpi"><span class="muted small">Dernier inventaire</span><span class="big" style="font-size:1.25rem">${last?fmtDM.format(new Date(last.at)):'Jamais'}</span>${last?`<span class="muted small">${eur.format(last.value)}</span>`:''}</div></div>
+    ${withCost&&Object.keys(byCat).length>1?`<ul class="list">${Object.entries(byCat).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<li><span class="grow">${esc(c)}</span><span class="qty small">${eur.format(v)}</span></li>`).join('')}</ul>`:''}`;
+}
+function orderText(o){return `Commande ${state.shop||''} · ${fmtDM.format(new Date(o.at))}\n${o.supplier}\n`+o.items.map(i=>`- ${i.name} : ${num(i.qty)} ${i.unit}`).join('\n');}
+$('make-orders').onclick=()=>{const inOrder=openOrderItems(),low=lowStock().filter(x=>!inOrder[x.id]);if(!low.length)return toast(lowStock().length?'Tout est déjà en commande':'Rien à commander');
+  const by={};low.forEach(x=>{(by[x.supplier]=by[x.supplier]||[]).push(x);});
+  Object.entries(by).forEach(([sup,items])=>state.orders.push({id:uid(),supplier:sup,at:new Date().toISOString(),status:'à envoyer',items:items.map(x=>({sid:x.id,name:x.name,unit:x.unit,qty:Math.ceil(x.min*2-x.qty),price:x.cost||0}))}));
+  done(`${Object.keys(by).length} commande${Object.keys(by).length>1?'s':''} créée${Object.keys(by).length>1?'s':''}`,`Commandes créées : ${Object.keys(by).join(', ')}`);commit();};
+function openReceive(id){const o=state.orders.find(x=>x.id===id);if(!o)return;
+  openSheet(`<h2>Réception · ${esc(o.supplier)}</h2><p class="muted small" style="margin:0">Indique les quantités réellement reçues : le stock est mis à jour automatiquement.</p>
+  <ul class="list">${o.items.map((i,j)=>`<li><span class="grow"><strong>${esc(i.name)}</strong><span class="muted small">commandé : ${num(i.qty)} ${esc(i.unit)}</span></span><input type="number" min="0" step="any" id="rcv-${j}" value="${i.qty}" style="max-width:100px" aria-label="Quantité reçue ${esc(i.name)}"></li>`).join('')}</ul>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Valider la réception</button></div>`,{type:'receive',id},null);}
+function openInventory(){
+  openSheet(`<h2>Inventaire</h2><p class="muted small" style="margin:0">Compte ce qu'il y a réellement en stock. Les quantités et la valeur seront mises à jour.</p>
+  <ul class="list">${[...state.stock].sort((a,b)=>(a.cat||'').localeCompare(b.cat||'')||a.name.localeCompare(b.name)).map(x=>`<li><span class="grow"><strong>${esc(x.name)}</strong><span class="muted small">${esc(x.cat||'')}${x.cat?' · ':''}${esc(x.unit)} · actuel : ${num(x.qty)}</span></span><input type="number" min="0" step="any" data-invq="${x.id}" value="${x.qty}" style="max-width:100px" aria-label="Quantité comptée ${esc(x.name)}"></li>`).join('')||'<li class="empty-note">Aucun article.</li>'}</ul>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Enregistrer l'inventaire</button></div>`,{type:'inventory'},null);}
+$('inv-btn').onclick=openInventory;
 function renderSales(){
   if(!$('s-date').value)$('s-date').value=todayKey;
   const a=weekSales(1),b=weekSales(8);
@@ -1088,7 +1244,7 @@ function renderSales(){
   $('sales-chart').innerHTML=svg;
   if(feat('couts')){let cost=0;for(let i=1;i<=7;i++)cost+=dayCost(addDays(today,-i));const r=a.ca?Math.round(cost/a.ca*100):0;
    $('sales-kpis').insertAdjacentHTML('beforeend',`<div class="kpi"><span class="muted small">Masse salariale / CA (7 j)</span><span class="big">${hasRates()&&a.ca?r+' %':'—'}</span><span class="muted small">${hasRates()?eur.format(cost)+' estimés':'Ajoute les taux horaires'}</span></div>`);}
-  renderMonthly();renderLosses();
+  renderMonthly();renderLosses();renderProfit();
 }
 
 /* ---------- Sheets ---------- */
@@ -1102,15 +1258,20 @@ function openShift(e,d){
   <div class="presets"><button type="button" data-p="05:00-12:00">Matin 5h–12h</button><button type="button" data-p="06:30-13:30">Vente matin</button><button type="button" data-p="13:00-20:00">Après-midi</button><button type="button" data-p="14:00-21:00">Fermeture</button></div>
   <div class="two"><label>Début<input type="time" id="f-s" value="${x?x.s:'05:00'}"></label><label>Fin<input type="time" id="f-e" value="${x?x.e:'12:00'}"></label></div>
   ${x?'':''}<label>Poste<select id="f-p">${postes().map(o=>o.name).concat(x&&!postes().some(o=>o.name===x.p)?[x.p]:[]).map(p=>`<option ${((x?x.p:emp.poste)===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
+  <p class="muted small" id="f-pausehint" style="margin:0"></p>
   <button type="button" class="btn sm" data-fillweek style="align-self:flex-start">Recopier sur les jours libres (lun.–sam.)</button>${actions(x?'Mettre en repos':'')}`,{type:'shift',e,d},'f-s');
+  pauseHint();
 }
+function pauseHint(){const el=$('f-pausehint');if(!el)return;const a=$('f-s').value,b=$('f-e').value;if(!a||!b||a===b){el.textContent='';return;}
+  const len=dur(a,b),RU=rules();el.textContent=`Durée : ${fh(len)}`+(len>RU.maxDay?` · au-delà du maximum de ${fh(RU.maxDay)} par jour`:len>RU.pauseAfter&&RU.pauseMin?` · pause de ${RU.pauseMin} min obligatoire`:'');}
 function openEmp(id){
   const emp=id?state.employees.find(x=>x.id===id):null;
   openSheet(`<h2>${emp?'Modifier '+esc(emp.name):'Nouveau salarié'}</h2>
   <label>Prénom<input type="text" id="f-name" value="${emp?esc(emp.name):''}" placeholder="Ex. Camille"></label>
   <div class="two"><label>Poste principal<select id="f-poste">${postes().map(o=>o.name).map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
   <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>
-  <div class="two"><label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label><label>Téléphone<input type="tel" id="f-phone2" value="${emp&&emp.phone?esc(emp.phone):''}" placeholder="06 12 34 56 78"></label></div>
+  <div class="two" ${company&&company.role==='manager'?'hidden':''}><label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label><label>Téléphone<input type="tel" id="f-phone2" value="${emp&&emp.phone?esc(emp.phone):''}" placeholder="06 12 34 56 78"></label></div>
+  <label>Langue de son espace<select id="f-lang">${[['fr','Français'],['pt','Português'],['en','English']].map(([v,l])=>`<option value="${v}" ${(emp&&emp.lang||'fr')===v?'selected':''}>${l}</option>`).join('')}</select></label>
   <label>E-mail du salarié (facultatif)<input type="email" id="f-email" value="${emp&&emp.email?esc(emp.email):''}" placeholder="Seul ce compte pourra utiliser cette fiche"></label>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
 }
 function openPoste(i){
@@ -1157,35 +1318,43 @@ function openStock(id){
   <label>Unité<input type="text" id="f-sunit" value="${s?esc(s.unit):''}" placeholder="Ex. sacs de 25 kg"></label>
   <div class="two"><label>Quantité<input type="number" id="f-sqty" step="0.5" min="0" value="${s?s.qty:0}"></label><label>Seuil d'alerte<input type="number" id="f-smin" step="0.5" min="0" value="${s?s.min:1}"></label></div>
   <div class="two"><label>Catégorie<input type="text" id="f-scat" list="f-scats" value="${s?esc(s.cat||''):esc(stockFilter&&stockFilter!=='Sans catégorie'?stockFilter:'')}" placeholder="Ex. Matières premières"><datalist id="f-scats">${stockCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
-  <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label></div>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
+  <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label></div>
+  <label>Prix d'achat unitaire (€)<input type="number" id="f-scost" min="0" step="0.01" value="${s&&s.cost?s.cost:''}" placeholder="Pour calculer la valeur du stock"></label>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
 }
 sheet.addEventListener('click',ev=>{
   const pe=ev.target.closest('[data-prod]');if(pe){openProduct(pe.dataset.prod);return;}
   const eq=ev.target.closest('[data-equip]');if(eq){openEquip(+eq.dataset.equip);return;}
   if(ev.target.closest('[data-equipnew]')){openEquip(null);return;}
+  const cv=ev.target.closest('[data-accent]');if(cv&&ctx.type==='settings'){ctx.accent=cv.dataset.accent;sheet.querySelectorAll('[data-accent]').forEach(b=>b.setAttribute('aria-pressed',b===cv));applyBranding({accent:ctx.accent,logo:state.settings.logo});return;}
+  const sd=ev.target.closest('[data-srday]');if(sd){sd.setAttribute('aria-pressed',sd.getAttribute('aria-pressed')!=='true');return;}
+  if(ev.target.closest('[data-sradd]')){const min=Math.max(1,parseInt($('sr-min').value,10)||1),start=$('sr-s').value,end=$('sr-e').value,days=[...sheet.querySelectorAll('[data-srday][aria-pressed="true"]')].map(b=>+b.dataset.srday);
+    if(!start||!end||mins(end)<=mins(start))return toast("L'heure de fin doit être après le début");if(!days.length)return toast('Choisis au moins un jour');
+    state.settings.staffing=(state.settings.staffing||[]).concat([{id:uid(),min,start,end,days}]);commit();openSettings();return;}
+  const sr=ev.target.closest('[data-strule]');if(sr){state.settings.staffing.splice(+sr.dataset.strule,1);commit();openSettings();return;}
+  if(ev.target.closest('[data-logodel]')){delete state.settings.logo;commit();applyBranding(state.settings);openSettings();return;}
   const ep=ev.target.closest('[data-epre]');if(ep){const[a,b]=ep.dataset.epre.split(':');$('f-emin').value=a;$('f-emax').value=b;return;}
   if(ev.target.closest('[data-fillweek]')&&ctx.type==='shift'){const st=$('f-s').value,en=$('f-e').value,po=$('f-p').value;if(!st||!en||st===en)return toast('Indique une heure de début et de fin différentes');
     const key=k(weekStart);state.weeks[key]=state.weeks[key]||{};const w=(state.weeks[key][ctx.e]=state.weeks[key][ctx.e]||{});let n=0;
     for(let d=0;d<6;d++){if(w[d]&&d!==ctx.d)continue;const av=((state.availability||{})[ctx.e]||{})[d];if(d!==ctx.d&&(leaveOn(ctx.e,k(addDays(weekStart,d)))||(av&&av.off)))continue;w[d]={s:st,e:en,p:po};n++;}
-    toast(`Créneau recopié sur ${n} jour${n>1?'s':''}`);commit();closeSheet();return;}
+    done(`Créneau recopié sur ${n} jour${n>1?'s':''}`,`Créneau de ${empName(ctx.e)} recopié sur ${n} jour${n>1?'s':''} (semaine du ${fmtDM.format(weekStart)})`);commit();closeSheet();return;}
   const lm=ev.target.closest('[data-lmove]');if(lm&&ctx.type==='list'){const l=state.lists.find(x=>x.id===ctx.id),[j,dl]=lm.dataset.lmove.split(':').map(Number),t=j+dl;
     if(l&&t>=0&&t<l.items.length){[l.items[j],l.items[t]]=[l.items[t],l.items[j]];commit();openList(ctx.id);}return;}
   if(ev.target.closest('[data-prodnew]')){openProduct(null);return;}
   const ta=ev.target.closest('[data-tplapply]');
   if(ta){const t=state.templates.find(x=>x.id===ta.dataset.tplapply);if(t){const ids=new Set(state.employees.map(e=>e.id));const d={};Object.entries(clone(t.data)).forEach(([id,v])=>{if(ids.has(id))d[id]=v;});
-    state.weeks[k(weekStart)]=d;toast(`« ${t.name} » appliquée`);commit();closeSheet();}return;}
+    state.weeks[k(weekStart)]=d;done(`« ${t.name} » appliquée`,`Semaine type « ${t.name} » appliquée à la semaine du ${fmtDM.format(weekStart)}`);commit();closeSheet();}return;}
   const td=ev.target.closest('[data-tpldel]');
   if(td){state.templates=state.templates.filter(x=>x.id!==td.dataset.tpldel);commit();openTemplates();return;}
   const sw=ev.target.closest('[data-color]');
   if(sw){ctx.color=+sw.dataset.color;sheet.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',b===sw));return;}
   const p=ev.target.closest('[data-p]');
-  if(p){const[s,e]=p.dataset.p.split('-');$('f-s').value=s;$('f-e').value=e;return;}
+  if(p){const[s,e]=p.dataset.p.split('-');$('f-s').value=s;$('f-e').value=e;pauseHint();return;}
   if(ev.target.id==='f-cancel')return closeSheet();
   if(ev.target.id==='f-del'){
     if(ctx.type!=='shift'&&!armed(ev.target,'Confirmer la suppression'))return;
-    if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];toast('Créneau retiré');}
+    if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];done('Créneau retiré',`Créneau de ${empName(ctx.e)} retiré le ${fmtDM.format(addDays(weekStart,ctx.d))}`);}
     else if(ctx.type==='emp'){const acc=members.find(m=>m.employee_id===ctx.id&&m.role==='employee');if(acc&&sb&&mode==='cloud')sb.rpc('remove_member',{cid:company.id,uid:acc.user_id}).then(()=>loadMembers());
-      state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
+      addLog(`Salarié retiré : ${empName(ctx.id)}`);state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
     else if(ctx.type==='stock'){state.stock=state.stock.filter(s=>s.id!==ctx.id);toast('Article supprimé');}
     else if(ctx.type==='list'){state.lists=state.lists.filter(x=>x.id!==ctx.id);toast('Liste supprimée');}
     else if(ctx.type==='equip'){state.equipments.splice(ctx.i,1);toast('Équipement supprimé. Les relevés passés sont conservés.');commit();openEquipments();return;}
@@ -1200,6 +1369,15 @@ sheet.addEventListener('submit',ev=>{
     const data={name,price:Math.max(0,parseFloat($('f-prprice').value)||0),unit:$('f-prunit').value.trim()||'pièce'};
     if(ctx.id)Object.assign(state.products.find(p=>p.id===ctx.id),data);else state.products.push({id:uid(),...data});
     toast('Produit enregistré');commit();openProducts();return;}
+  if(ctx.type==='settings'){const st=state.settings,H={};let any=false;
+    for(let d=0;d<7;d++){const on=sheet.querySelector(`[data-hopen="${d}"]`).checked,o=$('h-o-'+d).value,c=$('h-c-'+d).value;if(on){any=true;if(!o||!c||mins(c)<=mins(o))return toast(`Horaires de ${DAYS_LONG[d].toLowerCase()} incorrects`);}H[d]={closed:!on,open:o,close:c};}
+    const tm=v=>{const x=(v||'').split(':').map(Number);return x.length===2?x[0]*60+x[1]:NaN;},maxDay=tm($('r-day').value),minRest=tm($('r-rest').value),maxWeek=Math.round(parseFloat($('r-week').value)*60);
+    if(!maxDay||!minRest||!maxWeek)return toast('Vérifie les règles de travail');
+    st.hours=any?H:null;st.rules={idcc:$('r-idcc').value,maxDay,minRest,maxWeek,pauseAfter:360,pauseMin:Math.max(0,parseInt($('r-pause').value,10)||0)};st.holidays=$('r-hol').checked;st.accent=ctx.accent;
+    st.notifyKinds={};sheet.querySelectorAll('[data-nkind]').forEach(c=>st.notifyKinds[c.dataset.nkind]=c.checked);
+    const notify=$('f-notify').checked;Object.assign(st,{charges:Math.max(0,Math.min(100,parseFloat($('f-charges').value)||0)),goal:Math.max(0,parseFloat($('f-goal').value)||0),tempHour:+$('f-hour').value,notify});
+    if(notify&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission().then(()=>notifyLoop());
+    applyBranding(st);done('Paramètres enregistrés','Paramètres du commerce modifiés');commit();closeSheet();return;}
   if(ctx.type==='list'){const name=$('f-lname').value.trim();if(!name)return toast('Donne un nom à la liste');const remind=$('f-lremind').checked;
     if(ctx.id)Object.assign(state.lists.find(x=>x.id===ctx.id),{name,remind});else state.lists.push({id:uid(),name,remind,items:[]});
     toast(ctx.id?'Liste mise à jour':'Liste créée. Ajoute ses tâches.');commit();closeSheet();return;}
@@ -1209,6 +1387,12 @@ sheet.addEventListener('submit',ev=>{
     if(ctx.i==null)state.equipments.push({name,min:mn,max:mx});
     else{const old=state.equipments[ctx.i].name;state.equipments[ctx.i]={name,min:mn,max:mx};if(old!==name)state.temps.forEach(t=>{if(t.equip===old)t.equip=name;});}
     toast('Équipement enregistré');commit();openEquipments();return;}
+  if(ctx.type==='receive'){const o=state.orders.find(x=>x.id===ctx.id);if(!o)return closeSheet();
+    o.items.forEach((i,j)=>{const q=Math.max(0,parseFloat($('rcv-'+j).value)||0);i.received=q;const it=state.stock.find(x=>x.id===i.sid);if(it)it.qty=Math.round((it.qty+q)*100)/100;});
+    o.status='reçue';o.receivedAt=new Date().toISOString();done('Réception enregistrée : stock mis à jour',`Commande ${o.supplier} réceptionnée`);commit();closeSheet();return;}
+  if(ctx.type==='inventory'){let changed=0;sheet.querySelectorAll('[data-invq]').forEach(i=>{const it=state.stock.find(x=>x.id===i.dataset.invq),q=Math.max(0,parseFloat(i.value)||0);if(it&&it.qty!==q){it.qty=q;changed++;}});
+    const value=state.stock.reduce((p,x)=>p+(x.cost||0)*x.qty,0);state.inventories=(state.inventories||[]).concat([{at:new Date().toISOString(),value,count:state.stock.length}]).slice(-24);
+    done('Inventaire enregistré',`Inventaire : ${changed} quantité${changed>1?'s':''} corrigée${changed>1?'s':''}, valeur ${eur.format(value)}`);commit();closeSheet();return;}
   if(ctx.type==='import'){if(importData){state=normalize(importData,company?company.name:state.shop);importData=null;toast('Sauvegarde restaurée');commit();}closeSheet();return;}
   if(ctx.type==='register'){const m=$('f-month').value;closeSheet();if(m)setTimeout(()=>printRegister(m),80);return;}
   if(ctx.type==='tpl'){const name=$('f-tname').value.trim();if(!name)return toast('Donne un nom à cette semaine type');
@@ -1218,15 +1402,15 @@ sheet.addEventListener('submit',ev=>{
     const s=$('f-s').value,e=$('f-e').value;
     if(!s||!e||s===e)return toast('Indique une heure de début et de fin différentes');
     const key=k(weekStart);state.weeks[key]=state.weeks[key]||{};const w=state.weeks[key];
-    (w[ctx.e]=w[ctx.e]||{})[ctx.d]={s,e,p:$('f-p').value};toast('Créneau enregistré');
+    (w[ctx.e]=w[ctx.e]||{})[ctx.d]={s,e,p:$('f-p').value};done('Créneau enregistré',`Créneau de ${empName(ctx.e)} le ${fmtDM.format(addDays(weekStart,ctx.d))} : ${s}–${e}`);
   }else if(ctx.type==='emp'){
     const name=$('f-name').value.trim();if(!name)return toast('Indique un prénom');
     const contract=Math.max(1,Math.min(48,parseInt($('f-contract').value,10)||35));
-    const rate=Math.max(0,parseFloat($('f-rate').value)||0),phone=$('f-phone2').value.trim().slice(0,20),email=$('f-email').value.trim().toLowerCase();
+    const rate=Math.max(0,parseFloat($('f-rate').value)||0),phone=$('f-phone2').value.trim().slice(0,20),email=$('f-email').value.trim().toLowerCase(),lang=$('f-lang').value;
     if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return toast("L'e-mail du salarié n'est pas valide");
-    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate,phone,email});
-    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate,phone,email});
-    toast('Équipe mise à jour');
+    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate,phone,email,lang});
+    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate,phone,email,lang});
+    done('Équipe mise à jour',`Fiche de ${name} ${ctx.id?'modifiée':'créée'}`);
   }else if(ctx.type==='leave'){
     if(!state.employees.length)return toast("Ajoute d'abord un salarié");
     const from=$('f-lfrom').value,to=$('f-lto').value;
@@ -1242,25 +1426,33 @@ sheet.addEventListener('submit',ev=>{
       if(old!==name){Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{if(x.p===old)x.p=name;})));state.employees.forEach(e=>{if(e.poste===old)e.poste=name;});}}
     toast('Postes mis à jour');
   }else if(ctx.type==='account'&&mode==='employee'){
-    empAction('profile',{phone:$('f-phone').value.trim()}).then(ok=>{if(ok)toast('Téléphone enregistré');});closeSheet();return;
+    const lg=$('f-elang').value,nt=$('f-enotif').checked;try{localStorage.setItem('monkiosk-enotif',nt?'1':'0');}catch(e){}
+    if(nt&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission();
+    (async()=>{await empAction('profile',{phone:$('f-phone').value.trim()});if(lg!==eLang())await empAction('lang',{lang:lg});toast('Enregistré');})();closeSheet();return;
   }else if(ctx.type==='account'){
     const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
     state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;$('nav-shop').textContent=name;$('titlebar-shop').textContent='· '+name;
     if(company.role==='owner')sb.from('companies').update({name}).eq('id',company.id).then(()=>{});
     const ms=memberships.find(x=>x.id===company.id);if(ms)ms.name=name;
-    const notify=$('f-notify').checked;
-    state.settings=Object.assign({},state.settings,{charges:Math.max(0,Math.min(100,parseFloat($('f-charges').value)||0)),goal:Math.max(0,parseFloat($('f-goal').value)||0),tempHour:+$('f-hour').value,notify});
-    if(notify&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission().then(()=>notifyLoop());
-    toast('Réglages enregistrés');
+    toast('Compte enregistré');
   }else if(ctx.type==='stock'){
     const name=$('f-sname').value.trim();if(!name)return toast("Indique le nom de l'article");
-    const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur',cat:$('f-scat').value.trim()};
+    const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur',cat:$('f-scat').value.trim(),cost:Math.max(0,parseFloat($('f-scost').value)||0)};
     if(ctx.id)Object.assign(state.stock.find(s=>s.id===ctx.id),data);else state.stock.push({id:uid(),...data});
-    toast('Stock mis à jour');
+    done('Stock mis à jour',`Article ${data.name} ${ctx.id?'modifié':'ajouté'} (${num(data.qty)} ${data.unit})`);
   }
   commit();closeSheet();
 });
 overlay.addEventListener('click',ev=>{if(ev.target===overlay)closeSheet();});
+sheet.addEventListener('input',ev=>{if(ev.target.id==='f-s'||ev.target.id==='f-e')pauseHint();});
+sheet.addEventListener('change',ev=>{
+  if(ev.target.id==='f-s'||ev.target.id==='f-e')pauseHint();
+  if(ev.target.id==='f-theme'){try{localStorage.setItem('monkiosk-theme',ev.target.value);}catch(e){}applyTheme();}
+  if(ev.target.id==='r-idcc'&&ctx&&ctx.type==='settings'){const c=CONVENTIONS.find(x=>x.idcc===ev.target.value);if(!c)return;const hm2=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+    $('r-day').value=hm2(c.maxDay);$('r-week').value=c.maxWeek/60;$('r-rest').value=hm2(c.minRest);$('r-pause').value=c.pauseMin;toast('Règles de la convention appliquées : tu peux les ajuster');}
+  if(ev.target.id==='a-logo'){const f=ev.target.files[0];if(!f)return;const img=new Image(),r=new FileReader();r.onload=()=>{img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),s2=Math.min(img.width,img.height);x.drawImage(img,(img.width-s2)/2,(img.height-s2)/2,s2,s2,0,0,160,160);
+      state.settings.logo=c.toDataURL('image/png');commit();applyBranding(state.settings);openSettings();toast('Logo enregistré');};img.src=r.result;};r.readAsDataURL(f);}
+});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!overlay.hidden)closeSheet();});
 
 /* ---------- Interactions ---------- */
@@ -1275,27 +1467,34 @@ document.addEventListener('click',ev=>{
   const ds=t.dataset;
   if(ds.view)return go(ds.view);
   if(ds.go)return go(ds.go);
-  if(t.classList.contains('cell'))return openShift(ds.e,+ds.d);
+  if(t.classList.contains('cell')||(ds.e&&ds.d!=null&&t.closest('#dayview')))return openShift(ds.e,+ds.d);
   if(ds.emp)return openEmp(ds.emp);
   if(ds.stock)return openStock(ds.stock);
+  if(ds.pview){planView=ds.pview;return renderDayView();}
+  if(ds.pday!=null){planDay=+ds.pday;return renderDayView();}
   if(ds.sfilter!=null){stockFilter=ds.sfilter;return renderStock();}
   if(ds.editlist)return openList(ds.editlist);
   if(ds.equip!=null)return openEquip(+ds.equip);
   if(ds.poste!=null)return openPoste(+ds.poste);
-  if(ds.punch){const[e,kind]=ds.punch.split(':');state.punches.push({id:uid(),emp:e,kind,at:new Date().toISOString()});toast(kind==='in'?`Arrivée de ${empName(e)} enregistrée`:`Départ de ${empName(e)} enregistré`);return commit();}
+  if(ds.punch){const[e,kind]=ds.punch.split(':');state.punches.push({id:uid(),emp:e,kind,at:new Date().toISOString()});done(kind==='in'?`Arrivée de ${empName(e)} enregistrée`:`Départ de ${empName(e)} enregistré`);return commit();}
+  if(ds.mrole){const[uid2,role]=ds.mrole.split(':');sb.rpc('set_member_role',{cid:company.id,uid:uid2,new_role:role}).then(({error})=>{if(error)return toast(frError(error));const m=members.find(x=>x.user_id===uid2);done(role==='manager'?'Manager nommé':'Rôle manager retiré',`${empName(m&&m.employee_id)} ${role==='manager'?'nommé manager':'n\'est plus manager'}`);commit();loadMembers();});return;}
   if(ds.unlink){if(!armed(t,'Confirmer'))return;removeMember(ds.unlink);return;}
   if(ds.delta){const[id,dl]=ds.delta.split(':');const s=state.stock.find(x=>x.id===id);s.qty=Math.max(0,Math.round((s.qty+Number(dl))*10)/10);return commit();}
-  if(ds.leaveOk){state.leaves.find(l=>l.id===ds.leaveOk).status='validé';toast('Congé validé');return commit();}
-  if(ds.leaveNo){state.leaves.find(l=>l.id===ds.leaveNo).status='refusé';toast('Demande refusée');return commit();}
+  if(ds.leaveOk){const l=state.leaves.find(x=>x.id===ds.leaveOk);l.status='validé';done('Congé validé',`Congé de ${empName(l.emp)} validé (${l.from} → ${l.to})`);return commit();}
+  if(ds.leaveNo){const l=state.leaves.find(x=>x.id===ds.leaveNo);l.status='refusé';done('Demande refusée',`Congé de ${empName(l.emp)} refusé (${l.from} → ${l.to})`);return commit();}
   if(ds.leaveDel){state.leaves=state.leaves.filter(l=>l.id!==ds.leaveDel);return commit();}
   if(ds.swapok){const x=state.swaps.find(y=>y.id===ds.swapok);if(!x)return;const dt=fromKey(x.date),wk=k(monday(dt)),di=(dt.getDay()+6)%7;
     state.weeks[wk]=state.weeks[wk]||{};const w=state.weeks[wk],sh=(w[x.emp]||{})[di]||{s:x.s,e:x.e,p:x.p};
     if((w[x.volunteer]||{})[di])return toast(`${empName(x.volunteer)} a déjà un créneau ce jour-là`);
-    if(w[x.emp])delete w[x.emp][di];(w[x.volunteer]=w[x.volunteer]||{})[di]=sh;x.status='validé';toast('Échange validé : le planning est à jour');return commit();}
+    if(w[x.emp])delete w[x.emp][di];(w[x.volunteer]=w[x.volunteer]||{})[di]=sh;x.status='validé';done('Échange validé : le planning est à jour',`Échange validé : ${empName(x.volunteer)} remplace ${empName(x.emp)} le ${fmtDM.format(dt)}`);return commit();}
   if(ds.swapno){const x=state.swaps.find(y=>y.id===ds.swapno);if(x)x.status='refusé';toast('Échange refusé');return commit();}
   if(ds.swapdel){state.swaps=state.swaps.filter(y=>y.id!==ds.swapdel);return commit();}
   if(ds.rdone){const r=state.reports.find(x=>x.id===ds.rdone);if(r)r.status='traité';toast('Signalement traité');return commit();}
   if(ds.rdel){state.reports=state.reports.filter(x=>x.id!==ds.rdel);return commit();}
+  if(ds.ocopy){const o=state.orders.find(x=>x.id===ds.ocopy);const txt=orderText(o);try{navigator.clipboard.writeText(txt).then(()=>toast('Commande copiée'),()=>toast('Copie impossible'));}catch(e){toast('Copie impossible');}return;}
+  if(ds.osent){const o=state.orders.find(x=>x.id===ds.osent);o.status='envoyée';done('Commande marquée envoyée',`Commande ${o.supplier} envoyée`);return commit();}
+  if(ds.orecv)return openReceive(ds.orecv);
+  if(ds.odel){if(!armed(t,'Confirmer'))return;state.orders=state.orders.filter(x=>x.id!==ds.odel);return commit();}
   if(ds.delnote){state.notes=state.notes.filter(n=>n.id!==ds.delnote);return commit();}
   if(ds.addtask){const inp=$('add-'+ds.addtask),txt=inp.value.trim();if(!txt)return toast('Écris la tâche à ajouter');state.lists.find(l=>l.id===ds.addtask).items.push({id:uid(),text:txt});toast('Tâche ajoutée');return commit();}
   if(ds.deltask){const[lid,iid]=ds.deltask.split(':');const l=state.lists.find(x=>x.id===lid);l.items=l.items.filter(i=>i.id!==iid);return commit();}
@@ -1315,16 +1514,16 @@ $('copy-week').onclick=()=>{
   const prev=state.weeks[k(addDays(weekStart,-7))];
   if(!prev||!Object.keys(prev).length)return toast('La semaine précédente est vide');
   const cur=state.weeks[k(weekStart)];if(cur&&Object.values(cur).some(d=>Object.keys(d).length)&&!armed($('copy-week'),'Remplacer la semaine affichée ?'))return;
-  state.weeks[k(weekStart)]=JSON.parse(JSON.stringify(prev));commit();toast('Semaine précédente reprise');
+  state.weeks[k(weekStart)]=JSON.parse(JSON.stringify(prev));done('Semaine précédente reprise',`Semaine du ${fmtDM.format(weekStart)} reprise de la précédente`);commit();
 };
 $('share-emp').onchange=renderShare;
 $('copy-share').onclick=()=>copyText('share-text','Message copié');
 $('copy-order').onclick=()=>copyText('order-text','Commande copiée');
-$('n-add').onclick=()=>{const txt=$('n-text').value.trim();if(!txt)return toast("Écris l'annonce avant de la publier");state.notes.push({id:uid(),date:todayKey,text:txt});$('n-text').value='';toast('Annonce publiée');commit();};
+$('n-add').onclick=()=>{const txt=$('n-text').value.trim();if(!txt)return toast("Écris l'annonce avant de la publier");state.notes.push({id:uid(),date:todayKey,text:txt});$('n-text').value='';done('Annonce publiée',`Annonce publiée : ${txt.slice(0,80)}`);commit();};
 $('t-add').onclick=()=>{const v=parseFloat($('t-val').value);if(isNaN(v))return toast('Indique la température relevée');
   const r={id:uid(),at:new Date().toISOString(),equip:$('t-equip').value,val:v};state.temps.push(r);$('t-val').value='';toast(tempOk(r)?'Relevé conforme':'Attention : température hors norme');commit();};
 $('s-add').onclick=()=>{const d=$('s-date').value,ca=parseFloat($('s-ca').value),tk=parseInt($('s-tk').value,10)||0;
-  if(!d||isNaN(ca)||ca<0)return toast("Indique la date et le chiffre d'affaires");const had=!!state.sales[d];state.sales[d]={ca,tk};$('s-ca').value='';$('s-tk').value='';toast(had?'Journée mise à jour':'Journée enregistrée');commit();};
+  if(!d||isNaN(ca)||ca<0)return toast("Indique la date et le chiffre d'affaires");const had=!!state.sales[d];state.sales[d]={ca,tk};$('s-ca').value='';$('s-tk').value='';done(had?'Journée mise à jour':'Journée enregistrée',`Ventes du ${fmtDM.format(fromKey(d))} : ${eur.format(ca)}`);commit();};
 $('s-date').onchange=()=>{const v=state.sales[$('s-date').value];$('s-ca').value=v?v.ca:'';$('s-tk').value=v&&v.tk?v.tk:'';};
 $('reset').onclick=()=>location.reload();
 document.addEventListener('keydown',ev=>{
@@ -1335,6 +1534,8 @@ document.addEventListener('keydown',ev=>{
   else if(id==='e-pcode')click('[data-eact="punchgo"]');
   else if(id==='e-val')click('[data-eact="temp"]');
   else if(id==='e-rtext')click('[data-eact="report"]');
+  else if(id==='e-msg')click('[data-eact="msg"]');
+  else if(id==='o-msg')click('#o-send');
   else if(t.dataset&&(t.dataset.lossq||t.dataset.elossq)){ev.preventDefault();const attr=t.dataset.lossq?'lossq':'elossq',all=[...document.querySelectorAll(`[data-${attr}]`)],i=all.indexOf(t);
     if(all[i+1])all[i+1].focus();else t.blur();}
 });
@@ -1401,8 +1602,10 @@ function hasRates(){return state.employees.some(e=>e.rate>0);}
 function dayCost(d){const w=state.weeks[k(monday(d))]||{},di=(d.getDay()+6)%7;let c=0;
   state.employees.forEach(e=>{const x=(w[e.id]||{})[di];if(x)c+=dur(x.s,x.e)/60*(e.rate||0);});
   return c*(1+(state.settings.charges||0)/100);}
+function punchState(ps){const l=ps[ps.length-1];return !l?'none':l.kind==='in'||l.kind==='resume'?'work':l.kind==='pause'?'pause':'out';}
+const KIND_LBL={in:'arrivée',out:'départ',pause:'pause',resume:'reprise'};
 function punchesOf(list,emp,key){return list.filter(p=>p.emp===emp&&k(new Date(p.at))===key).sort((a,b)=>a.at.localeCompare(b.at));}
-function workedMin(ps){let t=0,st=null;ps.forEach(p=>{if(p.kind==='in')st=new Date(p.at);else if(st){t+=(new Date(p.at)-st)/60000;st=null;}});
+function workedMin(ps){let t=0,st=null;ps.forEach(p=>{if(p.kind==='in'||p.kind==='resume')st=new Date(p.at);else if(st){t+=(new Date(p.at)-st)/60000;st=null;}});
   if(st&&k(st)===todayKey)t+=(Date.now()-st)/60000;return Math.max(0,Math.round(t));}
 function weekWorked(emp){let t=0;for(let d=0;d<7;d++)t+=workedMin(punchesOf(state.punches,emp,k(addDays(thisMonday,d))));return t;}
 async function loadExtras(){
@@ -1419,12 +1622,12 @@ function renderPunches(){
   const di=(today.getDay()+6)%7,w=state.weeks[k(thisMonday)]||{};
   const rows=state.employees.map(e=>({e,x:(w[e.id]||{})[di],ps:punchesOf(state.punches,e.id,todayKey)})).sort((a,b)=>((b.x||b.ps.length)?1:0)-((a.x||a.ps.length)?1:0)||(a.x&&b.x?mins(a.x.s)-mins(b.x.s):0));
   $('punches').innerHTML=rows.length?rows.map(({e,x,ps})=>{
-    const last=ps[ps.length-1],inNow=last&&last.kind==='in',first=ps.find(p=>p.kind==='in');
+    const pst=punchState(ps),inNow=pst==='work'||pst==='pause',first=ps.find(p=>p.kind==='in');
     let chip;
     if(!ps.length)chip=!x?'':nowMin()>mins(x.s)+5?'<span class="chip crit">Pas arrivé</span>':'<span class="chip info">Attendu</span>';
-    else chip=inNow?'<span class="chip ok">En poste</span>':'<span class="chip info">Parti</span>';
+    else chip=pst==='pause'?'<span class="chip warn">En pause</span>':inNow?'<span class="chip ok">En poste</span>':'<span class="chip info">Parti</span>';
     let late='';if(first&&x){const diff=localMin(first.at)-mins(x.s);if(diff>5)late=`<span class="chip warn">Retard ${diff} min</span>`;}
-    const times=ps.map(p=>(p.kind==='in'?'arrivée ':'départ ')+hm(p.at)).join(' · ');
+    const times=ps.map(p=>KIND_LBL[p.kind]+' '+hm(p.at)).join(' · ');
     return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">${x?'Prévu '+x.s+'–'+x.e:'Non planifié'}${times?' · '+times:''}${ps.length?' · '+fh(workedMin(ps)):''}</span></span>${chip}${late}<button type="button" class="btn sm ${inNow?'':'primary'}" data-punch="${e.id}:${inNow?'out':'in'}">${inNow?'Départ':'Arrivée'}</button></li>`;
   }).join(''):'<li class="empty-note">Ajoute ton équipe pour suivre le pointage.</li>';
 }
@@ -1440,9 +1643,9 @@ async function loadMembers(){
 function renderAccounts(){
   const card=$('accounts-card');card.hidden=mode!=='cloud'||!company||company.role!=='owner'||!feat('espace');if(card.hidden)return;
   $('join-code').textContent=joinCode||'—';
-  const emps=members.filter(m=>m.role==='employee');
+  const emps=members.filter(m=>m.role==='employee'||m.role==='manager');
   $('members').innerHTML=!joinCode?'<li class="empty-note">Code indisponible : lance la dernière migration de la base dans Supabase.</li>':
-    emps.length?emps.map(m=>`<li><span class="grow"><strong>${esc(empName(m.employee_id))}</strong><span class="muted small">${esc(m.email)}</span></span><button type="button" class="btn sm danger" data-unlink="${m.user_id}">Retirer l'accès</button></li>`).join(''):'<li class="empty-note">Aucun salarié connecté pour l\'instant.</li>';
+    emps.length?emps.map(m=>`<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(empName(m.employee_id))} ${m.role==='manager'?'<span class="chip info">Manager</span>':''}</strong><span class="muted small">${esc(m.email)}</span></span><button type="button" class="btn sm" data-mrole="${m.user_id}:${m.role==='manager'?'employee':'manager'}">${m.role==='manager'?'Retirer manager':'Nommer manager'}</button><button type="button" class="btn sm danger" data-unlink="${m.user_id}">Retirer l'accès</button></li>`).join(''):'<li class="empty-note">Aucun salarié connecté pour l\'instant.</li>';
 }
 async function removeMember(uid){const {error}=await sb.rpc('remove_member',{cid:company.id,uid});if(error)return toast(frError(error));toast('Accès retiré');loadMembers();}
 $('copy-code').onclick=()=>{if(!joinCode)return;try{navigator.clipboard.writeText(joinCode).then(()=>toast('Code copié'),()=>toast('Code : '+joinCode));}catch(e){toast('Code : '+joinCode);}};
@@ -1529,9 +1732,13 @@ function notifyLoop(){
   if(mode!=='cloud'||!state||!state.settings.notify||!('Notification' in window)||Notification.permission!=='granted')return;
   let sent={};try{sent=JSON.parse(localStorage.getItem('monkiosk-notified')||'{}');}catch(e){}
   if(sent.day!==k(new Date()))sent={day:k(new Date())};
-  const items=reminders().map(r=>({key:r.key,txt:r.txt.replace(/<[^>]+>/g,'')}));
-  const low=feat('stock')?lowStock():[];if(low.length)items.push({key:'stock'+low.length,txt:`À commander : ${low.map(x=>x.name).join(', ')}`});
-  const pend=feat('conges')?pendingLeaves():[];if(pend.length)items.push({key:'leaves'+pend.length,txt:`${pend.length} demande${pend.length>1?'s':''} de congé à traiter`});
+  const NK=Object.assign({temps:true,stock:true,conges:true,signalements:true,echanges:true,messages:true},state.settings.notifyKinds||{});
+  const items=NK.temps?reminders().map(r=>({key:r.key,txt:r.txt.replace(/<[^>]+>/g,'')})):[];
+  if(NK.signalements&&feat('signalements')){const o=state.reports.filter(r=>r.status==='ouvert').length;if(o)items.push({key:'rep'+o,txt:`${o} signalement${o>1?'s':''} de l'équipe`});}
+  if(NK.messages&&feat('messagerie')){const u=unreadMsgs(state.messages||[],'owner');if(u)items.push({key:'msg'+u,txt:`${u} nouveau${u>1?'x':''} message${u>1?'s':''} de l'équipe`});}
+  if(NK.echanges&&feat('echanges')){const o=state.swaps.filter(x=>x.status==='proposé').length;if(o)items.push({key:'swp'+o,txt:`${o} échange${o>1?'s':''} de créneau à valider`});}
+  const low=NK.stock&&feat('stock')?lowStock():[];if(low.length)items.push({key:'stock'+low.length,txt:`À commander : ${low.map(x=>x.name).join(', ')}`});
+  const pend=NK.conges&&feat('conges')?pendingLeaves():[];if(pend.length)items.push({key:'leaves'+pend.length,txt:`${pend.length} demande${pend.length>1?'s':''} de congé à traiter`});
   items.forEach(it=>{if(sent[it.key])return;try{new Notification('MonKiosk',{body:it.txt,icon:'icons/icon-192.png'});}catch(e){}sent[it.key]=true;});
   try{localStorage.setItem('monkiosk-notified',JSON.stringify(sent));}catch(e){}
 }
@@ -1575,6 +1782,38 @@ function openRegister(){
   <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Imprimer ou enregistrer en PDF</button></div>`,{type:'register'},'f-month');
 }
 $('tpl-btn').onclick=openTemplates;
+let autoUndo=null;
+function autoPlan(){
+  const RU=rules(),H=state.settings.hours,S=state.settings.staffing||[];
+  if(!H&&!S.length)return toast("Renseigne d'abord les horaires d'ouverture ou l'effectif minimum dans Paramètres du commerce");
+  if(!state.employees.length)return toast("Ajoute d'abord ton équipe");
+  const wk=k(weekStart);autoUndo={key:wk,data:clone(state.weeks[wk]||{})};state.weeks[wk]=state.weeks[wk]||{};const w=state.weeks[wk];
+  const planned=e=>{let t=0;for(let d=0;d<7;d++){const x=(w[e.id]||{})[d];if(x)t+=dur(x.s,x.e);}return t;};
+  const unavailable=(e,d)=>{const av=((state.availability||{})[e.id]||{})[d],ad=((state.availDates||{})[e.id]||{})[k(addDays(weekStart,d))];return (av&&av.off&&!(ad&&ad.type==='extra'))||(ad&&ad.type==='off');};
+  const restOk=(e,d,st,en)=>{const prev=d>0?(w[e.id]||{})[d-1]:((state.weeks[k(addDays(weekStart,-7))]||{})[e.id]||{})[6],next=d<6?(w[e.id]||{})[d+1]:null;
+    if(prev){const pe=mins(prev.s)+dur(prev.s,prev.e)-1440;if(st-pe<RU.minRest)return false;}if(next){if(1440+mins(next.s)-en<RU.minRest)return false;}return true;};
+  let added=0;const maxSlots=Math.floor(RU.maxDay/30);
+  for(let d=0;d<7;d++){const Hd=H&&H[d],hk=k(addDays(weekStart,d));
+    const need=i=>{let n=0;const t=i*30;S.forEach(r=>{if(r.days.includes(d)&&t>=mins(r.start)&&t<mins(r.end))n=Math.max(n,r.min);});if(Hd&&!Hd.closed&&t>=mins(Hd.open)&&t<mins(Hd.close))n=Math.max(n,1);return n;};
+    const req=[...Array(48).keys()].map(need);if(!req.some(Boolean))continue;
+    let guard=0;
+    while(guard++<40){const c=coverage(weekStart,d),i0=req.findIndex((r,i)=>c[i]<r);if(i0<0)break;
+      let i1=i0;while(i1<48&&c[i1]<req[i1]&&i1-i0<maxSlots)i1++;
+      let len=Math.max(i1-i0,8);if(len>maxSlots)len=maxSlots;let st=i0*30,en=Math.min(1440,st+len*30);
+      if(Hd&&!Hd.closed&&en>mins(Hd.close)&&mins(Hd.close)-st>=240)en=mins(Hd.close);
+      const cands=state.employees.filter(e=>!(w[e.id]||{})[d]&&!leaveOn(e.id,hk)&&!unavailable(e,d)&&planned(e)+(en-st)<=RU.maxWeek&&restOk(e,d,st,en))
+        .map(e=>({e,left:e.contract*60-planned(e)})).sort((a,b)=>b.left-a.left);
+      const pick=cands.find(x=>x.left>0)||null;if(!pick)break;
+      const f=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+      (w[pick.e.id]=w[pick.e.id]||{})[d]={s:f(st),e:f(en),p:pick.e.poste||postes()[0].name};added++;}
+  }
+  if(!added){state.weeks[wk]=autoUndo.data;autoUndo=null;return toast("Aucun créneau à proposer : le planning couvre déjà les besoins, ou personne n'est disponible");}
+  addLog(`Planning automatique : ${added} créneau${added>1?'x':''} proposé${added>1?'s':''} pour la semaine du ${fmtDM.format(weekStart)}`);commit();
+  openSheet(`<h2>Planning proposé</h2><p class="muted small" style="margin:0">${added} créneau${added>1?'x ont été ajoutés':' a été ajouté'} sur les cases vides, en respectant les contrats, les disponibilités, les congés et les règles de travail. Vérifie-les dans le planning et ajuste si besoin.</p>
+  <div class="sheet-actions"><button type="button" class="btn danger" id="auto-undo">Annuler la proposition</button><button type="button" class="btn primary" id="f-cancel">Garder</button></div>`,{type:'auto'},null);
+}
+$('auto-btn').onclick=autoPlan;
+document.addEventListener('click',ev=>{if(ev.target.id==='auto-undo'&&autoUndo){state.weeks[autoUndo.key]=autoUndo.data;autoUndo=null;addLog('Proposition de planning annulée');commit();closeSheet();toast('Proposition annulée');}});
 $('print-plan').onclick=printPlanning;
 $('register-btn').onclick=openRegister;
 
@@ -1585,8 +1824,9 @@ async function loadEmployee(quiet){
   const {data,error}=await sb.rpc('employee_view',{cid:company.id,p_day:todayKey});
   if(error){if(quiet)return;authStep('a-company');authMsg('a-cmsg',frError(error),'err');return;}
   if(data&&data.removed)return accessRemoved();
-  mode='employee';eView=data;state={postes:data.postes||[]};
-  if(quiet&&!$('v-employee').hidden){renderEmployee();return;}
+  mode='employee';eView=data;state={postes:data.postes||[]};applyBranding(data.branding||{});
+  if(quiet&&!$('v-employee').hidden){renderEmployee();eNotify();return;}
+  setTimeout(eNotify,500);
   showEmployee();
 }
 function showEmployee(){
@@ -1598,9 +1838,84 @@ function showEmployee(){
   const mail=user&&user.email||'';$('nav-user').textContent=mail||'Compte';$('nav-avatar').textContent=(mail[0]||'?').toUpperCase();$('nav-sync').textContent='Salarié';$('nav-sync-dot').className='sync-dot';
   renderEmployee();
 }
+function seenKey(){return 'monkiosk-msgseen-'+(company?company.id:'x');}
+function unreadMsgs(list,me){let seen='';try{seen=localStorage.getItem(seenKey())||'';}catch(e){}return list.filter(m=>m.at>seen&&m.from!==me).length;}
+function markSeen(list){const last=list.length?list[list.length-1].at:'';if(last)try{localStorage.setItem(seenKey(),last);}catch(e){}}
+function threadHTML(list,me){return list.slice(-60).map(m=>`<div class="bubble ${m.from===me?'me':''}"><time>${esc(m.from==='owner'?(m.name||'Responsable'):m.name||'?')} · ${fmtShort.format(new Date(m.at))} ${hm(m.at)}</time><p>${esc(m.text)}</p></div>`).join('')||'<p class="empty-note">Aucun message pour l\'instant.</p>';}
+function eLang(){return (eView&&eView.employee&&eView.employee.lang)||'fr';}
+const I18N_DAYS={pt:['Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado','Domingo'],en:['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']};
+const I18N_MONTHS={pt:['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],en:['January','February','March','April','May','June','July','August','September','October','November','December']};
+const FR_MONTHS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],FR_MS=['janv.','févr.','mars','avr.','mai','juin','juil.','août','sept.','oct.','nov.','déc.'];
+const I18N={
+ pt:{"Aujourd'hui":'Hoje','Planning':'Horário','Tâches':'Tarefas','Messages':'Mensagens','Stock':'Stock','Congés':'Férias','Compte':'Conta','Bonjour':'Olá',
+  "Avec toi aujourd'hui":'Contigo hoje','Annonces':'Avisos','Signaler un problème':'Comunicar um problema',"Une panne, une casse, un souci d'hygiène ou de stock ? Ton responsable est prévenu tout de suite.":'Uma avaria, algo partido, um problema de higiene ou de stock? O teu responsável é avisado logo.',
+  'Matériel':'Material','Hygiène':'Higiene','Sécurité':'Segurança','Autre':'Outro','Envoyer':'Enviar','Mes heures':'As minhas horas','Échanges de créneaux':'Trocas de turno',
+  'Un empêchement ? Choisis le jour dans ton calendrier et demande un remplaçant. Tes collègues peuvent proposer de te remplacer, puis ton responsable valide.':'Um imprevisto? Escolhe o dia no calendário e pede um substituto. Os colegas podem oferecer-se e o responsável valida.',
+  'Mes disponibilités':'As minhas disponibilidades','Indique les jours où tu ne peux pas travailler chaque semaine. Ton responsable les voit dans le planning.':'Indica os dias em que não podes trabalhar todas as semanas. O responsável vê-os no horário.',
+  'Motif, si tu en indiques un (facultatif)':'Motivo (opcional)','Tâches du jour':'Tarefas do dia','Pertes et invendus du jour':'Perdas e sobras do dia','Saisis les quantités : la valeur se calcule toute seule.':'Indica as quantidades: o valor calcula-se sozinho.',
+  'Mets à jour les quantités quand tu ranges une livraison ou que tu utilises un produit.':'Atualiza as quantidades quando arrumas uma entrega ou usas um produto.','Mes congés':'As minhas férias',"Messages de l'équipe":'Mensagens da equipa',
+  'Tu travailles de':'Trabalhas das','Tu es en':'Estás de',"Tu n'es pas planifié aujourd'hui.":'Não estás escalado hoje.',"Saisis le code à 4 chiffres affiché en boutique aujourd'hui.":'Introduz o código de 4 algarismos afixado na loja hoje.',
+  'Valider':'Validar','Annuler':'Cancelar','Je termine ma journée':'Termino o meu dia','Je commence ma journée':'Começo o meu dia','Je pars en pause':'Vou fazer pausa','Je reprends':'Retomo','Je reprends le travail':'Volto ao trabalho',
+  'Arrivée':'Entrada','Départ':'Saída','Pause':'Pausa','Reprise':'Retoma','arrivée':'entrada','départ':'saída','pause':'pausa','reprise':'retoma','travaillées':'trabalhadas',
+  'Mon planning':'O meu horário','Ajouter à mon agenda':'Adicionar à agenda','prévues ce mois-ci':'previstas este mês','Repos':'Folga','Chercher un remplaçant':'Procurar substituto','Raison (facultatif)':'Motivo (opcional)',
+  'Disponible pour des heures en plus':'Disponível para horas extra','Indisponible ce jour':'Indisponível neste dia','Retirer':'Retirar','Dispo +':'Disp. +','Indispo':'Indisp.',
+  'Prévu cette semaine':'Previsto esta semana','Contrat :':'Contrato:','Pointé cette semaine':'Registado esta semana','Mes pointages':'Os meus registos','Télécharger mon récapitulatif du mois':'Descarregar o resumo do mês',
+  "Aucun collègue planifié aujourd'hui.":'Nenhum colega escalado hoje.',"Déjà relevé aujourd'hui :":'Já registado hoje:','(hors norme)':'(fora da norma)','à commander':'a encomendar','Aucun article en stock.':'Nenhum artigo em stock.',
+  "J'ai lu":'Li','Lu':'Lido','Aucune annonce.':'Nenhum aviso.','Envoyé':'Enviado','Traité':'Tratado','Indisponible':'Indisponível','Disponible':'Disponível','Redevenir disponible':'Voltar a estar disponível',
+  'Recherche':'Procura','Remplaçant trouvé':'Substituto encontrado','Validé':'Validado','Refusé':'Recusado','Mon créneau du':'O meu turno de','peut te remplacer · en attente du responsable':'pode substituir-te · à espera do responsável',
+  'Proposé':'Proposto','Cherche':'Procura','en attente du responsable':'à espera do responsável','Me retirer':'Retirar-me','Tu travailles ce jour-là':'Trabalhas nesse dia','Je peux le remplacer':'Posso substituir','Aucun échange en cours.':'Nenhuma troca em curso.',
+  'Relevé de température':'Registo de temperatura','Enregistrer':'Guardar',"Aucune demande pour l'instant.":'Nenhum pedido por agora.','Nouvelle demande':'Novo pedido','Envoyer la demande':'Enviar pedido','En attente':'Pendente',
+  'Congés payés':'Férias pagas','Maladie':'Doença','Formation':'Formação','Absence':'Ausência','Produit':'Produto','Quantité':'Quantidade','Valeur':'Valor','Total du':'Total de',"Ton responsable n'a pas encore créé de produits.":'O teu responsável ainda não criou produtos.',
+  "Aucun message pour l'instant.":'Nenhuma mensagem por agora.',"Écris un message à l'équipe":'Escreve uma mensagem à equipa','Responsable':'Responsável','Semaine du':'Semana de','de':'das','à':'às','le':'a','du':'de','au':'a',
+  'Bonne journée !':'Bom dia de trabalho!','Journée terminée, à bientôt !':'Dia terminado, até breve!','Bonne pause !':'Boa pausa!','Bon retour !':'Bom regresso!','Le code fait 4 chiffres':'O código tem 4 algarismos','Indique la température relevée':'Indica a temperatura',
+  'Relevé enregistré':'Registo guardado','Demande envoyée à ton responsable':'Pedido enviado ao responsável','Signalement envoyé à ton responsable':'Problema comunicado ao responsável','Décris le problème en quelques mots':'Descreve o problema em poucas palavras',
+  'Demande annulée':'Pedido cancelado','Jour indiqué comme indisponible':'Dia marcado como indisponível','Jour de nouveau disponible':'Dia de novo disponível','Disponibilité envoyée à ton responsable':'Disponibilidade enviada ao responsável','Disponibilité retirée':'Disponibilidade retirada',
+  'Demande envoyée à tes collègues':'Pedido enviado aos colegas','Proposition envoyée. Ton responsable va valider.':'Proposta enviada. O responsável vai validar.','Échange annulé':'Troca cancelada','Enregistré':'Guardado','Récapitulatif téléchargé':'Resumo descarregado',
+  'Ton planning a été mis à jour':'O teu horário foi atualizado','Une demande de congé a reçu une réponse':'Um pedido de férias recebeu resposta','Un échange de créneau a évolué':'Uma troca de turno mudou',"Nouveau message de l'équipe":'Nova mensagem da equipa','Nouvelle annonce':'Novo aviso',
+  'Mon téléphone (visible par ton responsable)':'O meu telefone (visível pelo responsável)','Notifications':'Notificações','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'Novo horário, férias validadas, troca aceite, novas mensagens.','Mon compte':'A minha conta','Me déconnecter':'Terminar sessão','Fermer':'Fechar','Mes commerces':'As minhas lojas','Salarié':'Funcionário'},
+ en:{"Aujourd'hui":'Today','Planning':'Schedule','Tâches':'Tasks','Messages':'Messages','Stock':'Stock','Congés':'Time off','Compte':'Account','Bonjour':'Hello',
+  "Avec toi aujourd'hui":'Working with you today','Annonces':'Announcements','Signaler un problème':'Report a problem',"Une panne, une casse, un souci d'hygiène ou de stock ? Ton responsable est prévenu tout de suite.":'A breakdown, breakage, hygiene or stock issue? Your manager is told right away.',
+  'Matériel':'Equipment','Hygiène':'Hygiene','Sécurité':'Safety','Autre':'Other','Envoyer':'Send','Mes heures':'My hours','Échanges de créneaux':'Shift swaps',
+  'Un empêchement ? Choisis le jour dans ton calendrier et demande un remplaçant. Tes collègues peuvent proposer de te remplacer, puis ton responsable valide.':"Can't make it? Pick the day in your calendar and ask for cover. Colleagues can offer to take it, then your manager approves.",
+  'Mes disponibilités':'My availability','Indique les jours où tu ne peux pas travailler chaque semaine. Ton responsable les voit dans le planning.':"Tell us which days you can't work each week. Your manager sees them in the schedule.",
+  'Motif, si tu en indiques un (facultatif)':'Reason (optional)','Tâches du jour':"Today's tasks",'Pertes et invendus du jour':"Today's waste and unsold items",'Saisis les quantités : la valeur se calcule toute seule.':'Enter the quantities: the value is calculated for you.',
+  'Mets à jour les quantités quand tu ranges une livraison ou que tu utilises un produit.':'Update quantities when you put away a delivery or use a product.','Mes congés':'My time off',"Messages de l'équipe":'Team messages',
+  'Tu travailles de':"You're working from",'Tu es en':"You're on","Tu n'es pas planifié aujourd'hui.":"You're not scheduled today.","Saisis le code à 4 chiffres affiché en boutique aujourd'hui.":"Enter today's 4-digit code shown in the shop.",
+  'Valider':'Confirm','Annuler':'Cancel','Je termine ma journée':'End my day','Je commence ma journée':'Start my day','Je pars en pause':'Start break','Je reprends':'End break','Je reprends le travail':'Back to work',
+  'Arrivée':'In','Départ':'Out','Pause':'Break','Reprise':'Back','arrivée':'in','départ':'out','pause':'break','reprise':'back','travaillées':'worked',
+  'Mon planning':'My schedule','Ajouter à mon agenda':'Add to my calendar','prévues ce mois-ci':'planned this month','Repos':'Off','Chercher un remplaçant':'Ask for cover','Raison (facultatif)':'Reason (optional)',
+  'Disponible pour des heures en plus':'Available for extra hours','Indisponible ce jour':'Unavailable this day','Retirer':'Remove','Dispo +':'Avail. +','Indispo':'Unavail.',
+  'Prévu cette semaine':'Planned this week','Contrat :':'Contract:','Pointé cette semaine':'Clocked this week','Mes pointages':'My clock-ins','Télécharger mon récapitulatif du mois':'Download my monthly summary',
+  "Aucun collègue planifié aujourd'hui.":'No colleague scheduled today.',"Déjà relevé aujourd'hui :":'Already recorded today:','(hors norme)':'(out of range)','à commander':'to order','Aucun article en stock.':'No items in stock.',
+  "J'ai lu":'Got it','Lu':'Read','Aucune annonce.':'No announcements.','Envoyé':'Sent','Traité':'Handled','Indisponible':'Unavailable','Disponible':'Available','Redevenir disponible':'Available again',
+  'Recherche':'Looking','Remplaçant trouvé':'Cover found','Validé':'Approved','Refusé':'Declined','Mon créneau du':'My shift on','peut te remplacer · en attente du responsable':'can cover you · waiting for your manager',
+  'Proposé':'Offered','Cherche':'Needs cover','en attente du responsable':'waiting for your manager','Me retirer':'Withdraw','Tu travailles ce jour-là':"You're working that day",'Je peux le remplacer':'I can cover','Aucun échange en cours.':'No swaps in progress.',
+  'Relevé de température':'Temperature reading','Enregistrer':'Save',"Aucune demande pour l'instant.":'No requests yet.','Nouvelle demande':'New request','Envoyer la demande':'Send request','En attente':'Pending',
+  'Congés payés':'Paid leave','Maladie':'Sick leave','Formation':'Training','Absence':'Absence','Produit':'Product','Quantité':'Quantity','Valeur':'Value','Total du':'Total for',"Ton responsable n'a pas encore créé de produits.":"Your manager hasn't created any products yet.",
+  "Aucun message pour l'instant.":'No messages yet.',"Écris un message à l'équipe":'Write a message to the team','Responsable':'Manager','Semaine du':'Week of','de':'from','à':'to','le':'on','du':'from','au':'to',
+  'Bonne journée !':'Have a good day!','Journée terminée, à bientôt !':'Day done, see you soon!','Bonne pause !':'Enjoy your break!','Bon retour !':'Welcome back!','Le code fait 4 chiffres':'The code has 4 digits','Indique la température relevée':'Enter the temperature',
+  'Relevé enregistré':'Reading saved','Demande envoyée à ton responsable':'Request sent to your manager','Signalement envoyé à ton responsable':'Report sent to your manager','Décris le problème en quelques mots':'Describe the problem in a few words',
+  'Demande annulée':'Request cancelled','Jour indiqué comme indisponible':'Day marked unavailable','Jour de nouveau disponible':'Day available again','Disponibilité envoyée à ton responsable':'Availability sent to your manager','Disponibilité retirée':'Availability removed',
+  'Demande envoyée à tes collègues':'Request sent to your colleagues','Proposition envoyée. Ton responsable va valider.':'Offer sent. Your manager will approve it.','Échange annulé':'Swap cancelled','Enregistré':'Saved','Récapitulatif téléchargé':'Summary downloaded',
+  'Ton planning a été mis à jour':'Your schedule was updated','Une demande de congé a reçu une réponse':'A time-off request got an answer','Un échange de créneau a évolué':'A shift swap changed',"Nouveau message de l'équipe":'New team message','Nouvelle annonce':'New announcement',
+  'Mon téléphone (visible par ton responsable)':'My phone (visible to your manager)','Notifications':'Notifications','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'New schedule, time off approved, swap accepted, new messages.','Mon compte':'My account','Me déconnecter':'Log out','Fermer':'Close','Mes commerces':'My shops','Salarié':'Employee'}
+};
+function T(s){const d=I18N[eLang()];return (d&&d[s])||s;}
+// Traduit l'espace salarié après chaque affichage (phrases connues, jours et mois)
+function translateText(txt){const lg=eLang();if(lg==='fr'||!txt||!txt.trim())return txt;const d=I18N[lg],tr=txt.trim();
+  if(d[tr])return txt.replace(tr,d[tr]);
+  let out=txt;Object.keys(d).filter(x=>x.length>3).sort((a,b)=>b.length-a.length).forEach(x=>{if(out.includes(x))out=out.split(x).join(d[x]);});
+  DAYS_LONG.forEach((dn,i)=>{out=out.replace(new RegExp('\\b'+dn+'\\b','g'),I18N_DAYS[lg][i]).replace(new RegExp('\\b'+dn.toLowerCase()+'\\b','g'),I18N_DAYS[lg][i].toLowerCase());});
+  FR_MONTHS.forEach((mn,i)=>{out=out.replace(new RegExp('(\\d{1,2}|^|\\s)'+mn+'(?=\\s|$|\\d)','gi'),(m0,p1)=>p1+I18N_MONTHS[lg][i]);});
+  FR_MS.forEach((mn,i)=>{out=out.split(' '+mn).join(' '+I18N_MONTHS[lg][i].slice(0,3)+'.');});
+  return out;}
+function translateNode(root){if(eLang()==='fr'||!root)return;const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while((n=w.nextNode())){if(n.parentElement&&/SCRIPT|STYLE/.test(n.parentElement.tagName))continue;const t2=translateText(n.nodeValue);if(t2!==n.nodeValue)n.nodeValue=t2;}
+  root.querySelectorAll('[placeholder]').forEach(i=>{const t2=translateText(i.getAttribute('placeholder'));if(t2!==i.getAttribute('placeholder'))i.setAttribute('placeholder',t2);});}
+function translateEmployee(){if(mode!=='employee')return;translateNode($('v-employee'));translateNode($('nav'));translateNode($('viewtitle'));
+  const wd=document.querySelectorAll('#v-employee .mcal .wd'),L={pt:['S','T','Q','Q','S','S','D'],en:['M','T','W','T','F','S','S']}[eLang()];if(L)wd.forEach((x,i)=>x.textContent=L[i%7]);}
 function renderEmployeeNav(){
   const F=eView.features||{};
-  const show={'e-home':true,'e-planning':true,'e-taches':F.taches!==false||F.hygiene!==false||F.pertes!==false,'e-stock':F.stock===true&&Array.isArray(eView.stock),'e-conges':F.conges!==false};
+  const show={'e-messages':F.messagerie!==false,'e-home':true,'e-planning':true,'e-taches':F.taches!==false||F.hygiene!==false||F.pertes!==false,'e-stock':F.stock===true&&Array.isArray(eView.stock),'e-conges':F.conges!==false};
   if(!show[eTab])eTab='e-home';
   document.querySelectorAll('#nav [data-eview]').forEach(b=>{b.parentElement.hidden=!show[b.dataset.eview];if(b.dataset.eview===eTab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   document.querySelectorAll('#v-employee .etab').forEach(t=>t.hidden=t.dataset.etab!==eTab);
@@ -1610,23 +1925,26 @@ function renderEmployeeNav(){
   const bh=$('b-e-home');if(bh){bh.hidden=!(unread&&F.annonces!==false);bh.textContent=unread;}
   const dn=eView.done||{},left=F.taches===false?0:(eView.lists||[]).reduce((p,l)=>p+l.items.filter(i=>!dn[i.id]).length,0);
   const bt=$('b-e-taches');if(bt){bt.hidden=!left;bt.textContent=left;}
+  const um=unreadMsgs((eView.messages||[]),eid),bm=$('b-e-messages');if(bm){bm.hidden=!um||eTab==='e-messages';bm.textContent=um;}
 }
 document.addEventListener('click',ev=>{
   if(mode!=='employee')return;const c=ev.target.closest('[data-ecal]'),n=ev.target.closest('[data-ecalnav]');
   if(c){eCalSel=c.dataset.ecal;const dt=fromKey(eCalSel);if(dt.getMonth()!==eCalMonth.getMonth())eCalMonth=new Date(dt.getFullYear(),dt.getMonth(),1);renderEmployee();}
   if(n){eCalMonth=new Date(eCalMonth.getFullYear(),eCalMonth.getMonth()+Number(n.dataset.ecalnav),1);renderEmployee();}
 });
-document.addEventListener('click',ev=>{const b=ev.target.closest('[data-eview]');if(!b||mode!=='employee')return;eTab=b.dataset.eview;renderEmployeeNav();window.scrollTo(0,0);});
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-eview]');if(!b||mode!=='employee')return;eTab=b.dataset.eview;if(eTab==='e-messages'){markSeen(eView.messages||[]);const th=$('e-thread');setTimeout(()=>th.scrollTop=th.scrollHeight,0);}renderEmployeeNav();translateEmployee();window.scrollTo(0,0);});
 function renderEmployee(){
   const e=eView.employee||{},eid=e.id,di=(today.getDay()+6)%7,F=eView.features||{};
   const shift=(ws,d)=>((eView.weeks[k(ws)]||{})[eid]||{})[d];
   const lvOn=key=>(eView.leaves||[]).find(l=>l.status==='validé'&&l.from<=key&&l.to>=key);
-  const x=shift(thisMonday,di),lvT=lvOn(todayKey),ps=punchesOf(eView.punches||[],eid,todayKey),inNow=ps.length&&ps[ps.length-1].kind==='in';
+  const x=shift(thisMonday,di),lvT=lvOn(todayKey),ps=punchesOf(eView.punches||[],eid,todayKey),pst=punchState(ps),inNow=pst==='work'||pst==='pause';
   $('e-today').innerHTML=`<h3>Aujourd'hui</h3>
     <p style="margin:0;font-size:1.05rem">${x?`Tu travailles de <strong>${x.s}</strong> à <strong>${x.e}</strong> · ${esc(x.p)}`:lvT?`Tu es en ${esc(lvT.type.toLowerCase())}.`:"Tu n'es pas planifié aujourd'hui."}</p>
     ${!F.badgeuse?'':pendingPunch?`<div class="row"><input type="text" id="e-pcode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Code du jour" aria-label="Code du jour" style="max-width:160px;letter-spacing:.3em;font-size:1.2rem;text-align:center"><button type="button" class="btn primary" data-eact="punchgo" data-kind="${pendingPunch}">Valider</button><button type="button" class="btn" data-eact="punchcancel">Annuler</button></div><p class="muted small" style="margin:0">Saisis le code à 4 chiffres affiché en boutique aujourd'hui.</p>`:
-    `<button type="button" class="btn primary" style="padding:16px;font-size:1.05rem" data-eact="punch" data-kind="${inNow?'out':'in'}">${inNow?'Je termine ma journée':'Je commence ma journée'}</button>`}
-    ${ps.length?`<p class="muted small" style="margin:0">${ps.map(p=>(p.kind==='in'?'Arrivée ':'Départ ')+hm(p.at)).join(' · ')} · ${fh(workedMin(ps))} travaillées</p>`:''}`;
+    pst==='work'?`<div class="row"><button type="button" class="btn" style="padding:14px" data-eact="pdirect" data-kind="pause">Je pars en pause</button><button type="button" class="btn primary" style="padding:14px" data-eact="punch" data-kind="out">Je termine ma journée</button></div>`:
+    pst==='pause'?`<div class="row"><button type="button" class="btn primary" style="padding:14px" data-eact="pdirect" data-kind="resume">Je reprends</button><button type="button" class="btn" style="padding:14px" data-eact="punch" data-kind="out">Je termine ma journée</button></div>`:
+    `<button type="button" class="btn primary" style="padding:16px;font-size:1.05rem" data-eact="punch" data-kind="in">${pst==='out'?'Je reprends le travail':'Je commence ma journée'}</button>`}
+    ${ps.length?`<p class="muted small" style="margin:0">${ps.map(p=>({in:'Arrivée',out:'Départ',pause:'Pause',resume:'Reprise'}[p.kind])+' '+hm(p.at)).join(' · ')} · ${fh(workedMin(ps))} travaillées</p>`:''}`;
   renderECal(shift,lvOn);
   const dn=eView.done||{};
   $('e-tasks').innerHTML=(F.taches===false?[]:(eView.lists||[])).map(l=>`<div class="card-head" style="margin-top:6px"><strong>${esc(l.name)}</strong><span class="muted small">${l.items.filter(i=>dn[i.id]).length} / ${l.items.length}</span></div>
@@ -1647,7 +1965,8 @@ function renderEmployee(){
    for(let i=0;i<14;i++){const dk=k(addDays(today,-i)),pp=punchesOf(eView.punches||[],eid,dk);if(pp.length)hist.push({dk,pp});}
    $('e-hours').innerHTML=`<div class="kpis"><div class="kpi"><span class="muted small">Prévu cette semaine</span><span class="big">${fh(plan)}</span>${contract?`<span class="muted small">Contrat : ${fh(contract)}</span>`:''}</div>
      ${F.badgeuse?`<div class="kpi"><span class="muted small">Pointé cette semaine</span><span class="big">${fh(worked)}</span>${plan?`<div class="bar"><span style="width:${Math.min(100,Math.round(worked/plan*100))}%"></span></div>`:''}</div>`:''}</div>
-     ${F.badgeuse&&hist.length?`<h3 style="margin-top:6px">Mes pointages</h3><ul class="list">${hist.map(h=>`<li><span class="grow"><strong>${DAYS_LONG[(fromKey(h.dk).getDay()+6)%7]} ${fmtDM.format(fromKey(h.dk))}</strong><span class="muted small">${h.pp.map(p=>(p.kind==='in'?'arrivée ':'départ ')+hm(p.at)).join(' · ')}</span></span><span class="qty small">${fh(workedMin(h.pp))}</span></li>`).join('')}</ul>`:''}`;}
+     <button type="button" class="btn sm" data-eact="myrecap" style="align-self:flex-start;margin-top:6px">Télécharger mon récapitulatif du mois</button>
+     ${F.badgeuse&&hist.length?`<h3 style="margin-top:6px">Mes pointages</h3><ul class="list">${hist.map(h=>`<li><span class="grow"><strong>${DAYS_LONG[(fromKey(h.dk).getDay()+6)%7]} ${fmtDM.format(fromKey(h.dk))}</strong><span class="muted small">${h.pp.map(p=>KIND_LBL[p.kind]+' '+hm(p.at)).join(' · ')}</span></span><span class="qty small">${fh(workedMin(h.pp))}</span></li>`).join('')}</ul>`:''}`;}
   // Collègues présents aujourd'hui
   {const T=eView.team_today||[];
    $('e-team').innerHTML=T.length?T.map(t=>`<li><span class="chip ${pcls(t.p)}">${esc(t.p||'')}</span><span class="grow"><strong>${esc(t.name)}</strong></span><span class="qty small">${esc(t.s||'')}–${esc(t.e||'')}</span></li>`).join(''):'<li class="empty-note">Aucun collègue planifié aujourd\'hui.</li>';
@@ -1664,6 +1983,9 @@ function renderEmployee(){
   // Signalements
   gate($('e-report-card'),F.signalements!==false);
   $('e-reports').innerHTML=(eView.reports||[]).map(r=>`<li><span class="chip ${r.status==='ouvert'?'warn':'ok'}">${r.status==='ouvert'?'Envoyé':'Traité'}</span><span class="grow"><strong>${esc(r.text)}</strong><span class="muted small">${esc(r.kind)} · ${fmtShort.format(new Date(r.at))}</span></span></li>`).join('');
+  // Messages
+  {const th=$('e-thread'),atBottom=th.scrollTop+th.clientHeight>=th.scrollHeight-20;th.innerHTML=threadHTML(eView.messages||[],eid);if(atBottom||!th.dataset.init){th.scrollTop=th.scrollHeight;th.dataset.init='1';}
+   if(eTab==='e-messages')markSeen(eView.messages||[]);}
   // Échanges de créneaux
   gate($('e-swap-card'),F.echanges!==false);
   {const SW=eView.swaps||[],me=eid,mine=SW.filter(x=>x.emp===me),theirs=SW.filter(x=>x.emp!==me);
@@ -1675,7 +1997,7 @@ function renderEmployee(){
   gate($('e-avail-card'),F.dispos!==false);
   {const AV=eView.availability||{};
    $('e-avail').innerHTML=DAYS_LONG.map((dl,d)=>{const a=AV[d];return `<li><span class="grow"><strong>${dl}</strong><span class="muted small">${a&&a.off?'Indisponible'+(a.note?' · '+esc(a.note):''):'Disponible'}</span></span><button type="button" class="btn sm ${a&&a.off?'':'danger'}" data-eact="avail" data-day="${d}" data-off="${a&&a.off?'0':'1'}">${a&&a.off?'Redevenir disponible':'Indisponible'}</button></li>`;}).join('');}
-  renderEmployeeNav();
+  renderEmployeeNav();translateEmployee();
 }
 let eCalMonth=new Date(today.getFullYear(),today.getMonth(),1),eCalSel=todayKey;
 function renderECal(shift,lvOn){
@@ -1684,7 +2006,8 @@ function renderECal(shift,lvOn){
   let total=0,cells=['L','M','M','J','V','S','D'].map(x=>`<span class="wd">${x}</span>`).join('');
   for(let i=0;i<pad;i++){const dt=addDays(first,i-pad);cells+=`<button type="button" class="day out" data-ecal="${k(dt)}"><span class="num">${dt.getDate()}</span></button>`;}
   for(let d=1;d<=dim;d++){const dt=new Date(y,m,d),key=k(dt),sh=sOf(dt),lv=lvOn(key),av=F.dispos!==false&&AV[(dt.getDay()+6)%7];if(sh)total+=dur(sh.s,sh.e);
-    cells+=`<button type="button" class="day ${key===todayKey?'today':''} ${key===eCalSel?'sel':''} ${av&&av.off&&!sh?'unavail':''}" data-ecal="${key}" aria-label="${DAYS_LONG[(dt.getDay()+6)%7]} ${d}${sh?', '+sh.s+' à '+sh.e:''}"><span class="num">${d}</span>${sh?`<span class="pill ${pcls(sh.p)}">${sh.s}–${sh.e}</span>`:''}${lv?`<span class="tag p-leave">${esc(lv.type)}</span>`:''}</button>`;}
+    cells+=`<button type="button" class="day ${key===todayKey?'today':''} ${key===eCalSel?'sel':''} ${av&&av.off&&!sh?'unavail':''}" data-ecal="${key}" aria-label="${DAYS_LONG[(dt.getDay()+6)%7]} ${d}${sh?', '+sh.s+' à '+sh.e:''}"><span class="num">${d}</span>${sh?`<span class="pill ${pcls(sh.p)}">${sh.s}–${sh.e}</span>`:''}${lv?`<span class="tag p-leave">${esc(lv.type)}</span>`:''}${(eView.avail_dates||{})[key]?`<span class="tag ${(eView.avail_dates||{})[key].type==='extra'?'extra':'p-leave'}">${(eView.avail_dates||{})[key].type==='extra'?'Dispo +':'Indispo'}</span>`:''}</button>`;}
+  const ADt=eView.avail_dates||{},sad=ADt[eCalSel];
   const sel=fromKey(eCalSel),ssh=sOf(sel),slv=lvOn(eCalSel),mySwap=(eView.swaps||[]).find(x=>x.emp===eView.employee.id&&x.date===eCalSel&&(x.status==='ouvert'||x.status==='proposé'));
   const canSwap=F.echanges!==false&&ssh&&eCalSel>=todayKey;
   $('e-plan').innerHTML=`<div class="mcal-head"><h2 class="hi">${ic('calendar')}Mon planning</h2><button type="button" class="btn sm" data-eact="ics">Ajouter à mon agenda</button></div>
@@ -1693,6 +2016,7 @@ function renderECal(shift,lvOn){
     <div class="day-detail"><strong>${DAYS_LONG[(sel.getDay()+6)%7]} ${fmtDM.format(sel)}</strong>
       <span>${ssh?`<span class="chip ${pcls(ssh.p)}">${esc(ssh.p)}</span> de <strong>${ssh.s}</strong> à <strong>${ssh.e}</strong> · ${fh(dur(ssh.s,ssh.e))}`:slv?`<span class="chip p-leave">${esc(slv.type)}</span>`:'<span class="muted">Repos</span>'}</span>
       ${mySwap?`<span class="muted small">Demande de remplacement ${mySwap.status==='proposé'?'acceptée par '+esc(mySwap.vname||'un collègue')+', en attente de validation':'envoyée, en attente d\'un collègue'}.</span>`:canSwap?`<div class="row"><input type="text" id="e-swapnote" maxlength="120" placeholder="Raison (facultatif)" aria-label="Raison"><button type="button" class="btn" data-eact="swapreq" data-date="${eCalSel}">${ic('swap')}Chercher un remplaçant</button></div>`:''}
+      ${F.dispos!==false&&eCalSel>=todayKey?`<div class="row" style="gap:6px">${sad?`<span class="chip ${sad.type==='extra'?'ok':'warn'}">${sad.type==='extra'?'Disponible pour des heures en plus':'Indisponible ce jour'}</span><button type="button" class="btn sm" data-eact="adate" data-type="clear">Retirer</button>`:`${ssh?'':`<button type="button" class="btn sm" data-eact="adate" data-type="extra">Disponible pour des heures en plus</button>`}<button type="button" class="btn sm" data-eact="adate" data-type="off">Indisponible ce jour</button>`}</div>`:''}
     </div>`;
 }
 function exportIcs(){
@@ -1712,6 +2036,17 @@ function accessRemoved(){
   if(next){openCompany(next);toast("Ton accès à ce commerce a été retiré par le responsable");return;}
   authStep('a-company');authMsg('a-cmsg',"Ton accès à ce commerce a été retiré par le responsable.",'err');
 }
+function eSnapshot(){const e=eView.employee||{},plan={};Object.entries(eView.weeks||{}).forEach(([wk,w])=>{if(wk>=k(thisMonday))plan[wk]=w[e.id];});
+  return {plan:JSON.stringify(plan),leaves:(eView.leaves||[]).map(l=>l.id+':'+l.status).join(','),swaps:(eView.swaps||[]).filter(x=>x.emp===e.id||x.volunteer===e.id).map(x=>x.id+':'+x.status).join(','),msg:((eView.messages||[]).slice(-1)[0]||{}).at||'',notes:(eView.notes||[]).length};}
+function eNotify(){if(!eView||!eView.employee)return;const key='monkiosk-esnap-'+company.id,now=eSnapshot();let old=null;try{old=JSON.parse(localStorage.getItem(key)||'null');}catch(e){}
+  try{localStorage.setItem(key,JSON.stringify(now));}catch(e){}if(!old)return;const msgs=[];
+  if(old.plan!==now.plan)msgs.push(T('Ton planning a été mis à jour'));
+  if(old.leaves!==now.leaves&&(eView.leaves||[]).some(l=>l.status!=='attente'&&!old.leaves.includes(l.id+':'+l.status)))msgs.push(T('Une demande de congé a reçu une réponse'));
+  if(old.swaps!==now.swaps&&now.swaps)msgs.push(T('Un échange de créneau a évolué'));
+  if(now.msg>old.msg&&((eView.messages||[]).slice(-1)[0]||{}).from!==eView.employee.id)msgs.push(T('Nouveau message de l\'équipe'));
+  if(now.notes>old.notes)msgs.push(T('Nouvelle annonce'));
+  if(!msgs.length)return;toast(msgs[0]);
+  if(localStorage.getItem('monkiosk-enotif')==='1'&&'Notification' in window&&Notification.permission==='granted')msgs.forEach(m=>{try{new Notification('MonKiosk',{body:m,icon:'icons/icon-192.png'});}catch(e){}});}
 async function empAction(action,payload){
   const {data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:action,p_payload:payload,p_day:todayKey});
   if(error){toast(frError(error));return false;}
@@ -1720,6 +2055,7 @@ async function empAction(action,payload){
 }
 document.addEventListener('click',async e2=>{
   const b=e2.target.closest('[data-eact]');if(!b||mode!=='employee')return;const a=b.dataset.eact;b.disabled=true;
+  if(a==='pdirect'){if(await empAction('punch',{kind:b.dataset.kind}))toast(b.dataset.kind==='pause'?'Bonne pause !':'Bon retour !');return;}
   if(a==='punch'){pendingPunch=b.dataset.kind;renderEmployee();const i=$('e-pcode');if(i)i.focus();return;}
   if(a==='punchcancel'){pendingPunch=null;renderEmployee();return;}
   if(a==='punchgo'){const code=($('e-pcode').value||'').trim();if(!/^\d{4}$/.test(code)){toast('Le code fait 4 chiffres');b.disabled=false;return;}
@@ -1731,6 +2067,14 @@ document.addEventListener('click',async e2=>{
   if(a==='report'){const text=$('e-rtext').value.trim();if(text.length<2){toast('Décris le problème en quelques mots');b.disabled=false;return;}
     if(await empAction('report',{kind:$('e-rkind').value,text})){$('e-rtext').value='';toast('Signalement envoyé à ton responsable');}b.disabled=false;return;}
   if(a==='ics'){exportIcs();b.disabled=false;return;}
+  if(a==='myrecap'){const e=eView.employee||{},y=eCalMonth.getFullYear(),m=eCalMonth.getMonth(),dim=new Date(y,m+1,0).getDate(),hh=v=>`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`;
+    const lines=[['Date','Horaires prévus','Poste','Heures prévues','Heures pointées'].join(';')];let tp=0,tw=0;
+    for(let d=1;d<=dim;d++){const dt=new Date(y,m,d),x=((eView.weeks[k(monday(dt))]||{})[e.id]||{})[(dt.getDay()+6)%7],w=workedMin(punchesOf(eView.punches||[],e.id,k(dt)));if(!x&&!w)continue;const pl=x?dur(x.s,x.e):0;tp+=pl;tw+=w;
+      lines.push([k(dt),x?x.s+'-'+x.e:'',x?x.p:'',hh(pl),w?hh(w):''].join(';'));}
+    lines.push(['Total','','',hh(tp),tw?hh(tw):''].join(';'));
+    const a2=document.createElement('a');a2.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));a2.download=`mes-heures-${y}-${String(m+1).padStart(2,'0')}.csv`;document.body.appendChild(a2);a2.click();a2.remove();toast('Récapitulatif téléchargé');b.disabled=false;return;}
+  if(a==='msg'){const txt=$('e-msg').value.trim();if(!txt){b.disabled=false;return;}if(await empAction('message',{text:txt})){$('e-msg').value='';markSeen(eView.messages||[]);}b.disabled=false;return;}
+  if(a==='adate'){if(await empAction('avail_date',{date:eCalSel,type:b.dataset.type,note:''}))toast(b.dataset.type==='off'?'Jour indiqué comme indisponible':b.dataset.type==='extra'?'Disponibilité envoyée à ton responsable':'Disponibilité retirée');return;}
   if(a==='swapreq'){if(await empAction('swap_request',{date:b.dataset.date,note:($('e-swapnote')||{}).value||''}))toast('Demande envoyée à tes collègues');return;}
   if(a==='swapvol'){if(await empAction('swap_volunteer',{id:b.dataset.id}))toast('Proposition envoyée. Ton responsable va valider.');return;}
   if(a==='swapcancel'){if(!armed(b,'Confirmer')){b.disabled=false;return;}if(await empAction('swap_cancel',{id:b.dataset.id}))toast('Échange annulé');return;}
@@ -1800,6 +2144,7 @@ function showApp(){
   $('nav-shop').textContent=state.shop||(company&&company.name)||'Démo';$('titlebar-shop').textContent='· '+$('nav-shop').textContent;
   $('shopname').textContent='MonKiosk · '+(state.shop||(company&&company.name)||'Démo');
   $('account').hidden=true;$('sync').hidden=true;
+  applyBranding(state.settings);
   const mail=user&&user.email||'';$('nav-user').textContent=mode==='demo'?'Quitter la démo':(mail||'Compte');$('nav-avatar').textContent=mode==='demo'?'×':(mail[0]||'?').toUpperCase();
   render();
 }
@@ -1891,20 +2236,22 @@ $('a-company').addEventListener('submit',async ev=>{
   if(error)return authMsg('a-cmsg',frError(error),'err');
   const m={id:data,name,role:'owner'};memberships.push(m);await openCompany(m);
 });
-$('a-demo').onclick=()=>{mode='demo';state=normalize(seed(),'Au Pain Doré');state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
+window.__demo=()=>{mode='demo';state=normalize(seed(),'Au Pain Doré');state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
 document.addEventListener('click',async ev=>{if(ev.target.closest('[data-logout]')){if(sb)await sb.auth.signOut();try{localStorage.removeItem('monkiosk-last-company');}catch(e){}location.reload();}});
 $('w-team').onclick=()=>openEmp(null);
 function openAccount(){
-  const owner=mode==='cloud'&&company&&company.role!=='employee',st=owner?state.settings:null;
+  const owner=mode==='cloud'&&company&&company.role==='owner',st=owner?state.settings:null,manager=company&&company.role==='manager';
   const hours=[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st&&st.tempHour===h?'selected':''}>${h} h</option>`).join('');
   const cos=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${m.role==='employee'?'Salarié':'Responsable'}</span></span>${company&&m.id===company.id?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button>`}</li>`).join('');
   openSheet(`<h2>Mon compte</h2>
   <p class="muted small" style="margin:0">Connecté en tant que <strong>${esc(user?user.email:'')}</strong></p>
-  ${owner?`<label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
-  <div class="two"><label>Charges patronales (%)<input type="number" id="f-charges" min="0" max="100" step="1" value="${st.charges}"></label><label>Objectif mensuel (€)<input type="number" id="f-goal" min="0" step="100" value="${st.goal||''}" placeholder="Ex. 25000"></label></div>
-  <div class="two"><label>Rappel des relevés à partir de<select id="f-hour">${hours}</select></label><label>Notifications<span style="display:flex;gap:8px;align-items:center;min-height:42px;color:var(--ink);font-weight:500"><input type="checkbox" id="f-notify" ${st.notify?'checked':''}> Activer les rappels</span></label></div>`:''}
+  ${owner?`<label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>`:''}
+  <label>Thème de l'affichage (cet appareil)<select id="f-theme">${[['auto','Automatique (comme le système)'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<option value="${v}" ${(localStorage.getItem('monkiosk-theme')||'auto')===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  ${mode==='employee'?`<label>Langue / Idioma / Language<select id="f-elang">${[['fr','Français'],['pt','Português'],['en','English']].map(([v,l])=>`<option value="${v}" ${eLang()===v?'selected':''}>${l}</option>`).join('')}</select></label>
+  <label class="switch" style="border:0;padding:0"><input type="checkbox" id="f-enotif" ${localStorage.getItem('monkiosk-enotif')==='1'?'checked':''}><span class="grow"><strong>Notifications</strong><span class="muted small">Nouveau planning, congé validé, échange accepté, nouveaux messages.</span></span></label>`:''}
   ${mode==='employee'?`<label>Mon téléphone (visible par ton responsable)<input type="tel" id="f-phone" value="${esc((eView&&eView.employee&&eView.employee.phone)||'')}" placeholder="Ex. 06 12 34 56 78"></label>`:''}
-  ${owner||isAdmin?`<div class="row">${owner?'<button type="button" class="btn sm primary" data-modules>Options du commerce</button>':''}${isAdmin?'<button type="button" class="btn sm" data-admin>Administration MonKiosk</button>':''}</div>`:''}
+  ${owner||isAdmin?`<div class="row">${owner?'<button type="button" class="btn sm primary" data-settings>Paramètres du commerce</button><button type="button" class="btn sm" data-modules>Options</button>':''}${isAdmin?'<button type="button" class="btn sm" data-admin>Administration MonKiosk</button>':''}</div>`:''}
+  ${manager?`<div class="row">${mode==='employee'?'<button type="button" class="btn sm primary" data-mmanage>Gérer le commerce</button>':'<button type="button" class="btn sm primary" data-mspace>Mon espace salarié</button>'}</div>`:''}
   <h3>Mes commerces</h3><ul class="list">${cos}</ul>
   <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
   ${desktopBlock()}
@@ -1912,6 +2259,33 @@ function openAccount(){
 }
 $('account').onclick=openAccount;
 $('nav-account').onclick=()=>mode==='demo'?location.reload():openAccount();
+function openSettings(){
+  const st=state.settings,RU=rules(),H=st.hours||{},NK=Object.assign({temps:true,stock:true,conges:true,signalements:true,echanges:true,messages:true},st.notifyKinds||{});
+  const hm2=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const accents=['#2453c9','#0f766e','#b45309','#be123c','#7c3aed','#15803d','#0e7490','#1f2937'];
+  openSheet(`<h2>Paramètres du commerce</h2>
+  <h3>Horaires d'ouverture</h3><p class="muted small" style="margin:0">Une alerte apparaît si la boutique est ouverte sans personne.</p>
+  <div style="display:flex;flex-direction:column;gap:6px">${DAYS_LONG.map((dl,d)=>{const h=H[d]||{};return `<div class="row" style="gap:8px;flex-wrap:nowrap"><label style="flex-direction:row;align-items:center;gap:6px;min-width:120px;color:var(--ink)"><input type="checkbox" data-hopen="${d}" ${st.hours&&!h.closed?'checked':''}> ${dl}</label><input type="time" id="h-o-${d}" value="${h.open||'07:00'}" aria-label="Ouverture ${dl}"><input type="time" id="h-c-${d}" value="${h.close||'19:30'}" aria-label="Fermeture ${dl}"></div>`;}).join('')}</div>
+  <h3>Effectif minimum</h3><p class="muted small" style="margin:0">Nombre de personnes nécessaires sur une plage horaire. Une alerte signale le sous-effectif.</p>
+  <ul class="list" id="staff-rules">${(st.staffing||[]).map((r,i)=>`<li><span class="grow"><strong>${r.min} personne${r.min>1?'s':''} de ${r.start} à ${r.end}</strong><span class="muted small">${r.days.map(d=>DAYS[d]).join(' ')}</span></span><button type="button" class="x" data-strule="${i}" aria-label="Supprimer">×</button></li>`).join('')||'<li class="empty-note">Aucune règle.</li>'}</ul>
+  <div class="row" style="gap:6px"><input type="number" id="sr-min" min="1" max="30" value="2" style="max-width:80px" aria-label="Nombre de personnes"><input type="time" id="sr-s" value="07:00" aria-label="Début"><input type="time" id="sr-e" value="09:00" aria-label="Fin"></div>
+  <div class="filters" id="sr-days">${DAYS.map((x,d)=>`<button type="button" data-srday="${d}" aria-pressed="${d<6}">${x}</button>`).join('')}</div>
+  <button type="button" class="btn sm" data-sradd style="align-self:flex-start">+ Ajouter la règle</button>
+  <h3>Règles de travail</h3>
+  <label>Convention collective<select id="r-idcc">${CONVENTIONS.map(c=>`<option value="${c.idcc}" ${c.idcc===(RU.idcc||'')?'selected':''}>${c.idcc?'IDCC '+c.idcc+' · ':''}${esc(c.name)}</option>`).join('')}</select></label>
+  <div class="two"><label>Maximum par jour<input type="time" id="r-day" value="${hm2(RU.maxDay)}"></label><label>Maximum par semaine (h)<input type="number" id="r-week" min="1" max="60" step="0.5" value="${RU.maxWeek/60}"></label></div>
+  <div class="two"><label>Repos minimum entre deux jours<input type="time" id="r-rest" value="${hm2(RU.minRest)}"></label><label>Pause de (min) après 6 h<input type="number" id="r-pause" min="0" max="120" value="${RU.pauseMin}"></label></div>
+  <p class="muted small" style="margin:0">Valeurs indicatives, basées sur le Code du travail et la convention choisie. Vérifie-les avec ton expert-comptable : un accord d'entreprise peut prévoir d'autres règles.</p>
+  <label class="switch" style="border:0;padding:0"><input type="checkbox" id="r-hol" ${st.holidays!==false?'checked':''}><span class="grow"><strong>Jours fériés</strong><span class="muted small">Les afficher dans le planning et signaler ceux qui sont travaillés.</span></span></label>
+  <h3>Apparence</h3>
+  <div class="row" style="gap:12px;align-items:center">${st.logo?`<img src="${st.logo}" alt="Logo" style="width:56px;height:56px;border-radius:14px;object-fit:cover">`:''}<label class="btn sm" for="a-logo" style="cursor:pointer;flex-direction:row">${st.logo?'Changer le logo':'Ajouter un logo'}</label><input type="file" id="a-logo" accept="image/*" hidden>${st.logo?'<button type="button" class="btn sm danger" data-logodel>Retirer</button>':''}</div>
+  <div class="swatches">${accents.map(c=>`<button type="button" data-accent="${c}" style="background:${c}" aria-label="Couleur ${c}" aria-pressed="${(st.accent||'#2453c9')===c}"></button>`).join('')}</div>
+  <h3>Notifications</h3><div>${[['temps','Températures et checklists non faites'],['stock','Articles à commander'],['conges','Demandes de congé'],['signalements',"Signalements de l'équipe"],['echanges','Échanges de créneau à valider'],['messages','Nouveaux messages']].map(([kk,l])=>`<label class="switch"><input type="checkbox" data-nkind="${kk}" ${NK[kk]?'checked':''}><span class="grow"><strong>${l}</strong></span></label>`).join('')}</div>
+  <h3>Chiffres</h3>
+  <div class="two"><label>Charges patronales (%)<input type="number" id="f-charges" min="0" max="100" step="1" value="${st.charges}"></label><label>Objectif mensuel (€)<input type="number" id="f-goal" min="0" step="100" value="${st.goal||''}" placeholder="Ex. 25000"></label></div>
+  <div class="two"><label>Rappel des relevés à partir de<select id="f-hour">${[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st.tempHour===h?'selected':''}>${h} h</option>`).join('')}</select></label><label>Notifications<span style="display:flex;gap:8px;align-items:center;min-height:46px;color:var(--ink);font-weight:500"><input type="checkbox" id="f-notify" ${st.notify?'checked':''}> Activer sur cet appareil</span></label></div>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'settings',accent:st.accent||'#2453c9'},null);
+}
 function openModules(){
   const m=state.settings.modules||{};
   const row=x=>{const lock=!unlocked(x.key);return `<label class="switch"><input type="checkbox" data-mod="${x.key}" ${!lock&&m[x.key]!==false?'checked':''} ${lock?'disabled':''}><span class="grow"><strong>${esc(x.name)} ${lock?'<span class="chip warn">Sur demande</span>':x.premium?'<span class="chip ok">Débloqué</span>':''}</strong><span class="muted small">${esc(x.desc)}</span></span></label>`;};
@@ -1932,11 +2306,14 @@ async function openAdmin(){
 }
 document.addEventListener('click',e2=>{
   if(e2.target.closest('[data-modules]')){openModules();return;}
+  if(e2.target.closest('[data-settings]')){openSettings();return;}
+  if(e2.target.closest('[data-mspace]')){closeSheet();loadEmployee();return;}
+  if(e2.target.closest('[data-mmanage]')){closeSheet();mode='cloud';loadCompany();return;}
   if(e2.target.closest('[data-admin]')){openAdmin();}
 });
 document.addEventListener('change',async e2=>{
   const c=e2.target;if(!c.dataset)return;
-  if(c.dataset.mod){state.settings.modules=Object.assign({},state.settings.modules,{[c.dataset.mod]:c.checked});commit();toast(c.checked?'Option activée':'Option désactivée');}
+  if(c.dataset.mod){state.settings.modules=Object.assign({},state.settings.modules,{[c.dataset.mod]:c.checked});addLog(`Option « ${(MODULES.find(x=>x.key===c.dataset.mod)||{}).name} » ${c.checked?'activée':'désactivée'}`);commit();toast(c.checked?'Option activée':'Option désactivée');}
   if(c.dataset.afeat){const[cid,key]=c.dataset.afeat.split(':');c.disabled=true;
     const {data,error}=await sb.rpc('admin_set_feature',{cid,fkey:key,enabled:c.checked});c.disabled=false;
     if(error){c.checked=!c.checked;return toast(frError(error));}
