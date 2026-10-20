@@ -1,7 +1,9 @@
 name: Application Windows
+# Construit l'installateur et crée la release quand la version de desktop/package.json change.
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+    paths: ['desktop/package.json']
   workflow_dispatch:
 permissions:
   contents: write
@@ -16,10 +18,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - id: version
+        shell: bash
+        run: echo "v=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
       - run: npm ci
       - run: npm run dist
       - uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
+          tag_name: v${{ steps.version.outputs.v }}
+          name: MonKiosk ${{ steps.version.outputs.v }}
+          target_commitish: ${{ github.sha }}
           files: desktop/dist/MonKiosk-Setup-*.exe
           generate_release_notes: true
