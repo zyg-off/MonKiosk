@@ -1,7 +1,7 @@
 {
   "name": "monkiosk",
   "productName": "MonKiosk",
-  "version": "1.5.2",
+  "version": "1.6.0",
   "description": "Planning, équipe, tâches, stock et ventes de ton commerce",
   "author": "zyg",
   "main": "main.js",

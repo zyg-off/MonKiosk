@@ -12,6 +12,7 @@ function send(status) {
 
 // Barre de titre aux couleurs de MonKiosk (boutons Windows conservés à droite)
 const BAR_HEIGHT = 36;
+const REMOTE = 'https://zyg-off.github.io/MonKiosk/';
 function barColors() {
   return nativeTheme.shouldUseDarkColors
     ? { color: '#11161d', symbolColor: '#e7ebf1', height: BAR_HEIGHT }
@@ -27,7 +28,15 @@ function createWindow() {
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') }
   });
-  win.loadFile(path.join(__dirname, 'app', 'index.html'));
+  // Charge la version en ligne (toujours à jour, sans réinstaller) ; la copie intégrée sert hors connexion.
+  const local = path.join(__dirname, 'app', 'index.html');
+  let fellBack = false;
+  const fallback = () => { if (!fellBack) { fellBack = true; win.loadFile(local); } };
+  win.webContents.on('did-fail-load', (_e, _code, _desc, url, isMain) => { if (isMain && url.startsWith(REMOTE)) fallback(); });
+  win.webContents.on('will-navigate', (e, url) => {
+    if (!url.startsWith(REMOTE) && !url.startsWith('file:')) { e.preventDefault(); shell.openExternal(url); }
+  });
+  win.loadURL(REMOTE).catch(fallback);
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('did-finish-load', () => send(lastStatus));
   nativeTheme.on('updated', () => { if (win && !win.isDestroyed()) { try { win.setTitleBarOverlay(barColors()); } catch (e) {} } });
@@ -49,9 +58,9 @@ autoUpdater.on('update-downloaded', async (i) => {
     type: 'info', buttons: ['Redémarrer maintenant', 'Plus tard'], defaultId: 0, cancelId: 1,
     title: 'Mise à jour prête',
     message: `MonKiosk ${i.version} est prête.`,
-    detail: 'Redémarre pour en profiter. Sinon, elle s\'installera à la prochaine fermeture de l\'appli.'
+    detail: 'L\'installation se fait en arrière-plan, en quelques secondes, puis MonKiosk se rouvre tout seul. Sinon, elle s\'installera discrètement à la prochaine fermeture.'
   });
-  if (r.response === 0) autoUpdater.quitAndInstall();
+  if (r.response === 0) autoUpdater.quitAndInstall(true, true);
 });
 
 function check() {
@@ -61,7 +70,7 @@ function check() {
 
 ipcMain.handle('app-version', () => app.getVersion());
 ipcMain.handle('check-updates', () => { check(); return true; });
-ipcMain.handle('install-update', () => { if (lastStatus.state === 'ready') autoUpdater.quitAndInstall(); return true; });
+ipcMain.handle('install-update', () => { if (lastStatus.state === 'ready') autoUpdater.quitAndInstall(true, true); return true; });
 
 Menu.setApplicationMenu(null);
 app.setAppUserModelId('com.zyg.monkiosk');
