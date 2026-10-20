@@ -1,19 +1,20 @@
 {
   "name": "monkiosk",
   "productName": "MonKiosk",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Planning, équipe, tâches, stock et ventes de ton commerce",
   "author": "zyg",
   "main": "main.js",
   "scripts": {
     "copy-web": "node copy-web.js",
-    "dist": "node copy-web.js && electron-builder --win nsis --x64"
+    "dist": "node copy-web.js && electron-builder --win nsis --x64 --publish never"
   },
   "build": {
     "appId": "com.zyg.monkiosk",
     "productName": "MonKiosk",
     "files": [
       "main.js",
+      "preload.js",
       "app/**/*",
       "build/icon.png"
     ],
@@ -39,7 +40,14 @@
       "language": "1036"
     },
     "afterPack": "./afterPack.js",
-    "publish": null
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "zyg-off",
+        "repo": "MonKiosk",
+        "releaseType": "release"
+      }
+    ]
   },
   "devDependencies": {
     "electron": "33.2.1",
@@ -50,5 +58,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/zyg-off/MonKiosk.git"
+  },
+  "dependencies": {
+    "electron-updater": "6.3.9"
   }
 }

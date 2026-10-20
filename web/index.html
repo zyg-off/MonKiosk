@@ -20,7 +20,7 @@
 :root{
   --bg:#f2f4f7; --surface:#ffffff; --ink:#17202b; --muted:#5a6474; --line:#dce1e8; --soft:#e9edf2;
   --accent:#2453c9; --accent-ink:#ffffff; --accent-soft:#e3eafb;
-  --four:#f4e2c6; --four-ink:#6a4210; --pat:#f6dbe5; --pat-ink:#7a2347; --vente:#d5e7f5; --vente-ink:#16486c; --net:#e1e5ea; --net-ink:#3a4451;
+  --four:#f4e2c6; --four-ink:#6a4210; --pat:#f6dbe5; --pat-ink:#7a2347; --vente:#d5e7f5; --vente-ink:#16486c; --net:#e1e5ea; --net-ink:#3a4451; --c4:#dcefd8; --c4-ink:#2a5c26; --c5:#d2eeeb; --c5-ink:#1c5652; --c6:#fbdfcd; --c6-ink:#7a3910; --c7:#f5edc0; --c7-ink:#5d4f0f;
   --leave:#ece6fb; --leave-ink:#4b3a8c;
   --crit:#b9301d; --crit-bg:#fbe5e0; --warn:#9a5c00; --warn-bg:#fcefd6; --ok:#2c7347; --ok-bg:#dff1e5;
   --f-display:"Bricolage Grotesque", system-ui, sans-serif;
@@ -30,14 +30,14 @@
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#11161d; --surface:#19202a; --ink:#e7ebf1; --muted:#9aa4b3; --line:#2b3441; --soft:#222a35;
   --accent:#7d9dff; --accent-ink:#0e1420; --accent-soft:#1f2b48;
-  --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df;
+  --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df; --c4:#20391e; --c4-ink:#bfe6b8; --c5:#173b39; --c5-ink:#b4e8e3; --c6:#4a2a16; --c6-ink:#f8c9a8; --c7:#3d3510; --c7-ink:#efe0a0;
   --leave:#2e2650; --leave-ink:#d4caff;
   --crit:#ff8a76; --crit-bg:#3d1d18; --warn:#f2bb5c; --warn-bg:#3a2c12; --ok:#7fd3a0; --ok-bg:#16301f;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11161d; --surface:#19202a; --ink:#e7ebf1; --muted:#9aa4b3; --line:#2b3441; --soft:#222a35;
   --accent:#7d9dff; --accent-ink:#0e1420; --accent-soft:#1f2b48;
-  --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df;
+  --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df; --c4:#20391e; --c4-ink:#bfe6b8; --c5:#173b39; --c5-ink:#b4e8e3; --c6:#4a2a16; --c6-ink:#f8c9a8; --c7:#3d3510; --c7-ink:#efe0a0;
   --leave:#2e2650; --leave-ink:#d4caff;
   --crit:#ff8a76; --crit-bg:#3d1d18; --warn:#f2bb5c; --warn-bg:#3a2c12; --ok:#7fd3a0; --ok-bg:#16301f;
   color-scheme:dark}
@@ -110,7 +110,12 @@ tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
 .p-four{background:var(--four);color:var(--four-ink)}
 .p-pat{background:var(--pat);color:var(--pat-ink)}
 .p-vente{background:var(--vente);color:var(--vente-ink)}
-.p-net{background:var(--net);color:var(--net-ink)}
+.p-net,.pc3{background:var(--net);color:var(--net-ink)}
+.pc0{background:var(--four);color:var(--four-ink)} .pc1{background:var(--pat);color:var(--pat-ink)} .pc2{background:var(--vente);color:var(--vente-ink)}
+.pc4{background:var(--c4);color:var(--c4-ink)} .pc5{background:var(--c5);color:var(--c5-ink)} .pc6{background:var(--c6);color:var(--c6-ink)} .pc7{background:var(--c7);color:var(--c7-ink)}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.swatches button{width:34px;height:34px;border-radius:50%;border:2px solid transparent}
+.swatches button[aria-pressed="true"]{border-color:var(--ink)}
 .p-leave{background:var(--leave);color:var(--leave-ink)}
 .total{text-align:center;white-space:nowrap}
 .total .num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:500}
@@ -267,7 +272,8 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
     <ul class="alerts" id="plan-alerts"></ul>
     <div class="tablewrap"><table id="grid"></table></div>
     <div class="legend" aria-label="Postes">
-      <span class="p-four">Fournil</span><span class="p-pat">Pâtisserie</span><span class="p-vente">Vente</span><span class="p-net">Nettoyage</span><span class="p-leave">Congé validé</span>
+      <span id="legend-postes" style="display:contents"></span><span class="p-leave">Congé validé</span>
+      <button type="button" class="linkbtn" id="edit-postes" style="font-size:.8rem">Modifier les postes</button>
     </div>
     <div class="actions">
       <button type="button" class="btn primary" id="add-emp">+ Ajouter un salarié</button>
@@ -295,9 +301,16 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
         <div id="notes" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
     </div>
-    <div class="card">
-      <div class="card-head"><h2>Salariés</h2><button type="button" class="btn sm" id="add-emp2">+ Ajouter</button></div>
-      <ul class="list" id="staff"></ul>
+    <div class="grid">
+      <div class="card">
+        <div class="card-head"><h2>Salariés</h2><button type="button" class="btn sm" id="add-emp2">+ Ajouter</button></div>
+        <ul class="list" id="staff"></ul>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Postes</h2><button type="button" class="btn sm" id="add-poste">+ Poste</button></div>
+        <p class="muted small" style="margin:0">Les postes de ton commerce et leur couleur dans le planning.</p>
+        <ul class="list" id="postes"></ul>
+      </div>
     </div>
   </section>
 
@@ -367,8 +380,10 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 <script>
 const DAYS=['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.'];
 const DAYS_LONG=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
-const POSTES=['Fournil','Pâtisserie','Vente','Nettoyage'];
-const PCLASS={'Fournil':'p-four','Pâtisserie':'p-pat','Vente':'p-vente','Nettoyage':'p-net'};
+const DEMO_POSTES=[{name:'Fournil',color:0},{name:'Pâtisserie',color:1},{name:'Vente',color:2},{name:'Nettoyage',color:3}];
+const COLORS=8;
+function postes(){return (state&&state.postes&&state.postes.length)?state.postes:DEMO_POSTES;}
+function pcls(name){const p=postes().find(x=>x.name===name);return p?'pc'+p.color:'p-net';}
 const LEAVE_TYPES=['Congés payés','Maladie','Formation','Absence'];
 const VIEWS={accueil:'Accueil',planning:'Planning',equipe:'Équipe',taches:'Tâches et hygiène',stock:'Stock',ventes:'Ventes'};
 const KEY='monkiosk-v1';
@@ -417,7 +432,7 @@ function seed(){
   for(let i=1;i<=14;i++){const d=addDays(today,-i),wd=(d.getDay()+6)%7;const ca=Math.round(base[wd]*(0.92+((i*37)%17)/100));sales[k(d)]={ca,tk:Math.round(ca/5.3)};}
   const mk=(n,h,m)=>{const d=addDays(today,n);d.setHours(h,m);return d.toISOString();};
   return {
-    example:true,employees:E,weeks:{[k(thisMonday)]:w},
+    example:true,postes:DEMO_POSTES.map(p=>({...p})),employees:E,weeks:{[k(thisMonday)]:w},
     leaves:[
       {id:uid(),emp:'theo',type:'Formation',from:k(addDays(thisMonday,5)),to:k(addDays(thisMonday,5)),status:'validé'},
       {id:uid(),emp:'ines',type:'Congés payés',from:k(addDays(thisMonday,14)),to:k(addDays(thisMonday,18)),status:'attente'}
@@ -451,7 +466,7 @@ function seed(){
   };
 }
 function emptyState(name){
-  return {shop:name,employees:[],weeks:{},leaves:[],notes:[],
+  return {shop:name,postes:[{name:'Production',color:0},{name:'Vente',color:2},{name:'Nettoyage',color:3}],employees:[],weeks:{},leaves:[],notes:[],
     lists:[
       {id:uid(),name:'Ouverture',items:[{id:uid(),text:'Allumer les équipements'},{id:uid(),text:'Mettre en place la vitrine'},{id:uid(),text:'Relever les températures des frigos'},{id:uid(),text:'Compter le fond de caisse'}]},
       {id:uid(),name:'Fermeture',items:[{id:uid(),text:'Nettoyer les plans de travail'},{id:uid(),text:'Noter les invendus'},{id:uid(),text:'Compter la caisse'},{id:uid(),text:"Activer l'alarme"}]}
@@ -459,7 +474,7 @@ function emptyState(name){
     done:{},equipments:[{name:'Chambre froide',min:0,max:4},{name:'Vitrine réfrigérée',min:0,max:4},{name:'Congélateur',min:-30,max:-18}],
     temps:[],stock:[],sales:{}};
 }
-function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});['employees','leaves','notes','temps','stock','lists','equipments'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
+function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});['postes','employees','leaves','notes','temps','stock','lists','equipments'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
 
 const CFG=window.MONKIOSK_CONFIG||{};
 let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false;
@@ -530,7 +545,7 @@ function weekSales(endOffset){let ca=0,tk=0,n=0;for(let i=endOffset;i<endOffset+
 /* ---------- Render ---------- */
 function render(){
   $('example').hidden=!state.example;
-  renderHome();renderPlanning();renderTeam();renderTasks();renderStock();renderSales();renderNav();
+  renderHome();renderPlanning();renderTeam();renderPostes();renderTasks();renderStock();renderSales();renderNav();
 }
 function renderNav(){
   document.querySelectorAll('.nav [data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
@@ -550,7 +565,7 @@ function renderHome(){
   const di=(today.getDay()+6)%7,w=state.weeks[k(thisMonday)]||{};
   const team=state.employees.map(e=>({e,x:(w[e.id]||{})[di]})).filter(o=>o.x).sort((a,b)=>mins(a.x.s)-mins(b.x.s));
   const off=state.employees.filter(e=>leaveOn(e.id,todayKey));
-  $('home-team').innerHTML=team.length?team.map(o=>`<li><span class="chip ${PCLASS[o.x.p]||'p-net'}">${esc(o.x.p)}</span><span class="grow"><strong>${esc(o.e.name)}</strong></span><span class="qty small">${o.x.s}–${o.x.e}</span></li>`).join('')+off.map(e=>`<li><span class="chip p-leave">Absent</span><span class="grow"><strong>${esc(e.name)}</strong></span></li>`).join(''):'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
+  $('home-team').innerHTML=team.length?team.map(o=>`<li><span class="chip ${pcls(o.x.p)}">${esc(o.x.p)}</span><span class="grow"><strong>${esc(o.e.name)}</strong></span><span class="qty small">${o.x.s}–${o.x.e}</span></li>`).join('')+off.map(e=>`<li><span class="chip p-leave">Absent</span><span class="grow"><strong>${esc(e.name)}</strong></span></li>`).join(''):'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
   const y=state.sales[k(addDays(today,-1))],a=weekSales(1),b=weekSales(8);
   const delta=b.ca?Math.round((a.ca-b.ca)/b.ca*100):0;
   $('home-sales').innerHTML=`<div class="kpi"><span class="muted small">Hier</span><span class="big">${y?eur.format(y.ca):'—'}</span></div>
@@ -573,7 +588,7 @@ function renderPlanning(){
     const sh=w[emp.id]||{};
     h+=`<tr><th class="sticky" scope="row"><button type="button" class="emp" data-emp="${emp.id}"><strong>${esc(emp.name)}</strong><small>${esc(emp.poste)} · ${emp.contract} h</small></button></th>`;
     for(let d=0;d<7;d++){const x=sh[d],lv=leaveOn(emp.id,k(addDays(weekStart,d)));
-      if(x){present[d]++;h+=`<td><button type="button" class="cell ${PCLASS[x.p]||'p-net'} ${flags.has(emp.id+'-'+d)?'flag':''}" data-e="${emp.id}" data-d="${d}" aria-label="${esc(emp.name)}, ${DAYS_LONG[d]}, ${x.s} à ${x.e}"><span class="hrs">${x.s}–${x.e}</span><span class="post">${esc(x.p)}</span></button></td>`;}
+      if(x){present[d]++;h+=`<td><button type="button" class="cell ${pcls(x.p)} ${flags.has(emp.id+'-'+d)?'flag':''}" data-e="${emp.id}" data-d="${d}" aria-label="${esc(emp.name)}, ${DAYS_LONG[d]}, ${x.s} à ${x.e}"><span class="hrs">${x.s}–${x.e}</span><span class="post">${esc(x.p)}</span></button></td>`;}
       else if(lv)h+=`<td><button type="button" class="cell p-leave" data-e="${emp.id}" data-d="${d}"><span class="post">${esc(lv.type)}</span></button></td>`;
       else h+=`<td><button type="button" class="cell empty" data-e="${emp.id}" data-d="${d}" aria-label="Ajouter un créneau à ${esc(emp.name)}, ${DAYS_LONG[d]}">Repos</button></td>`;
     }
@@ -583,6 +598,7 @@ function renderPlanning(){
   });
   h+='</tbody><tfoot><tr><th class="sticky">Présents</th>'+present.map(n=>`<td>${n}</td>`).join('')+'<td></td></tr></tfoot>';
   $('grid').innerHTML=h;
+  $('legend-postes').innerHTML=postes().map(p=>`<span class="pc${p.color}">${esc(p.name)}</span>`).join('');
   const sel=$('share-emp'),cur=sel.value;
   sel.innerHTML=state.employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
   if(state.employees.some(e=>e.id===cur))sel.value=cur;
@@ -610,6 +626,10 @@ function renderTeam(){
   $('notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}</p><button type="button" class="x" data-delnote="${n.id}" aria-label="Supprimer l'annonce">×</button></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
   const tot=analyse(thisMonday).totals;
   $('staff').innerHTML=state.employees.map(e=>`<li><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
+}
+function renderPostes(){
+  const used={};Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{used[x.p]=(used[x.p]||0)+1;})));
+  $('postes').innerHTML=postes().map((p,i)=>`<li><span class="chip pc${p.color}">${esc(p.name)}</span><span class="grow muted small">${used[p.name]?used[p.name]+' créneau'+(used[p.name]>1?'x':''):'Pas encore utilisé'}</span><button type="button" class="btn sm" data-poste="${i}">Modifier</button></li>`).join('');
 }
 function renderTasks(){
   const dn=state.done[todayKey]||{};
@@ -666,14 +686,22 @@ function openShift(e,d){
   openSheet(`<h2>${esc(emp.name)} · ${DAYS_LONG[d]} ${fmtDay.format(addDays(weekStart,d))}</h2>
   <div class="presets"><button type="button" data-p="05:00-12:00">Matin 5h–12h</button><button type="button" data-p="06:30-13:30">Vente matin</button><button type="button" data-p="13:00-20:00">Après-midi</button><button type="button" data-p="14:00-21:00">Fermeture</button></div>
   <div class="two"><label>Début<input type="time" id="f-s" value="${x?x.s:'05:00'}"></label><label>Fin<input type="time" id="f-e" value="${x?x.e:'12:00'}"></label></div>
-  <label>Poste<select id="f-p">${POSTES.map(p=>`<option ${((x?x.p:emp.poste)===p)?'selected':''}>${p}</option>`).join('')}</select></label>${actions(x?'Mettre en repos':'')}`,{type:'shift',e,d},'f-s');
+  <label>Poste<select id="f-p">${postes().map(o=>o.name).concat(x&&!postes().some(o=>o.name===x.p)?[x.p]:[]).map(p=>`<option ${((x?x.p:emp.poste)===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>${actions(x?'Mettre en repos':'')}`,{type:'shift',e,d},'f-s');
 }
 function openEmp(id){
   const emp=id?state.employees.find(x=>x.id===id):null;
   openSheet(`<h2>${emp?'Modifier '+esc(emp.name):'Nouveau salarié'}</h2>
   <label>Prénom<input type="text" id="f-name" value="${emp?esc(emp.name):''}" placeholder="Ex. Camille"></label>
-  <div class="two"><label>Poste principal<select id="f-poste">${POSTES.map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${p}</option>`).join('')}</select></label>
+  <div class="two"><label>Poste principal<select id="f-poste">${postes().map(o=>o.name).map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
   <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
+}
+function openPoste(i){
+  const p=i==null?null:postes()[i];const used=new Set(postes().map(x=>x.color));
+  let col=p?p.color:[...Array(COLORS).keys()].find(c=>!used.has(c));if(col==null)col=0;
+  openSheet(`<h2>${p?'Modifier le poste':'Nouveau poste'}</h2>
+  <label>Nom du poste<input type="text" id="f-pname" value="${p?esc(p.name):''}" placeholder="Ex. Cuisine, Caisse, Livraison"></label>
+  <label>Couleur</label><div class="swatches" id="f-pcolors">${[...Array(COLORS).keys()].map(c=>`<button type="button" class="pc${c}" data-color="${c}" aria-label="Couleur ${c+1}" aria-pressed="${c===col}"></button>`).join('')}</div>
+  ${actions(p&&postes().length>1?'Supprimer le poste':'')}`,{type:'poste',i,color:col},'f-pname');
 }
 function openLeave(){
   openSheet(`<h2>Nouvelle demande</h2>
@@ -691,6 +719,8 @@ function openStock(id){
   <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
 }
 sheet.addEventListener('click',ev=>{
+  const sw=ev.target.closest('[data-color]');
+  if(sw){ctx.color=+sw.dataset.color;sheet.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',b===sw));return;}
   const p=ev.target.closest('[data-p]');
   if(p){const[s,e]=p.dataset.p.split('-');$('f-s').value=s;$('f-e').value=e;return;}
   if(ev.target.id==='f-cancel')return closeSheet();
@@ -698,6 +728,7 @@ sheet.addEventListener('click',ev=>{
     if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];toast('Créneau retiré');}
     else if(ctx.type==='emp'){state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
     else if(ctx.type==='stock'){state.stock=state.stock.filter(s=>s.id!==ctx.id);toast('Article supprimé');}
+    else if(ctx.type==='poste'){if(!state.postes||!state.postes.length)state.postes=postes().map(x=>({...x}));state.postes.splice(ctx.i,1);toast('Poste supprimé. Les créneaux existants le gardent.');}
     commit();closeSheet();
   }
 });
@@ -720,6 +751,14 @@ sheet.addEventListener('submit',ev=>{
     if(!from||!to||to<from)return toast('La date de fin doit être après la date de début');
     state.leaves.push({id:uid(),emp:$('f-lemp').value,type:$('f-ltype').value,from,to,status:$('f-lok').checked?'validé':'attente'});
     toast('Demande enregistrée');
+  }else if(ctx.type==='poste'){
+    const name=$('f-pname').value.trim();if(!name)return toast('Indique le nom du poste');
+    if(!state.postes||!state.postes.length)state.postes=postes().map(x=>({...x}));
+    if(state.postes.some((x,j)=>j!==ctx.i&&x.name.toLowerCase()===name.toLowerCase()))return toast('Ce poste existe déjà');
+    if(ctx.i==null)state.postes.push({name,color:ctx.color});
+    else{const old=state.postes[ctx.i].name;state.postes[ctx.i]={name,color:ctx.color};
+      if(old!==name){Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{if(x.p===old)x.p=name;})));state.employees.forEach(e=>{if(e.poste===old)e.poste=name;});}}
+    toast('Postes mis à jour');
   }else if(ctx.type==='account'){
     const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
     state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;
@@ -751,6 +790,7 @@ document.addEventListener('click',ev=>{
   if(t.classList.contains('cell'))return openShift(ds.e,+ds.d);
   if(ds.emp)return openEmp(ds.emp);
   if(ds.stock)return openStock(ds.stock);
+  if(ds.poste!=null)return openPoste(+ds.poste);
   if(ds.delta){const[id,dl]=ds.delta.split(':');const s=state.stock.find(x=>x.id===id);s.qty=Math.max(0,Math.round((s.qty+Number(dl))*10)/10);return commit();}
   if(ds.leaveOk){state.leaves.find(l=>l.id===ds.leaveOk).status='validé';toast('Congé validé');return commit();}
   if(ds.leaveNo){state.leaves.find(l=>l.id===ds.leaveNo).status='refusé';toast('Demande refusée');return commit();}
@@ -768,6 +808,8 @@ $('add-emp').onclick=()=>openEmp(null);
 $('add-emp2').onclick=()=>openEmp(null);
 $('add-leave').onclick=openLeave;
 $('add-stock').onclick=()=>openStock(null);
+$('add-poste').onclick=()=>openPoste(null);
+$('edit-postes').onclick=()=>go('equipe');
 $('copy-week').onclick=()=>{
   const prev=state.weeks[k(addDays(weekStart,-7))];
   if(!prev||!Object.keys(prev).length)return toast('La semaine précédente est vide');
@@ -895,8 +937,21 @@ $('account').onclick=()=>{
   openSheet(`<h2>Mon compte</h2>
   <p class="muted small" style="margin:0">Connecté en tant que <strong>${esc(user?user.email:'')}</strong></p>
   <label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
+  ${window.monkioskDesktop?`<div class="note" style="flex-wrap:wrap;align-items:center"><p><time>Application Windows</time><span id="upd-text">Version ${esc(desktopVersion)} · ${updLabel()}</span></p><button type="button" class="btn sm" id="upd-btn">${updState.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour'}</button></div>`:''}
   <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'account'},'f-shop');
 };
+
+/* ---------- Appli Windows : version et mises à jour ---------- */
+let desktopVersion='',updState={state:'idle'};
+function updLabel(){const s=updState;return {idle:'à jour',checking:'recherche en cours…',uptodate:'à jour',downloading:`téléchargement de la ${s.version||'nouvelle version'}${s.percent?' ('+s.percent+' %)':''}…`,ready:`version ${s.version} prête à installer`,error:'recherche impossible pour le moment'}[s.state]||'';}
+if(window.monkioskDesktop){
+  window.monkioskDesktop.version().then(v=>desktopVersion=v);
+  window.monkioskDesktop.onUpdate(s=>{const was=updState.state;updState=s;
+    const t=$('upd-text');if(t)t.textContent=`Version ${desktopVersion} · ${updLabel()}`;
+    const b=$('upd-btn');if(b)b.textContent=s.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour';
+    if(s.state==='ready'&&was!=='ready')toast(`MonKiosk ${s.version} est prête à être installée`);});
+  document.addEventListener('click',ev=>{if(ev.target.id==='upd-btn'){updState.state==='ready'?window.monkioskDesktop.installUpdate():window.monkioskDesktop.checkUpdates();}});
+}
 
 boot();
 </script>
