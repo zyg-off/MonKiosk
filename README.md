@@ -15,7 +15,7 @@ Chaque commerce a son compte. Les données sont enregistrées en ligne et synchr
 - `web/` : l'application (une seule page HTML). C'est la version en ligne.
 - `desktop/` : l'application Windows, qui reprend automatiquement le contenu de `web/`.
 - `supabase/schema.sql` : la base de données complète (comptes, commerces, salariés, sécurité), pour une nouvelle installation.
-- `supabase/migration-1.4.sql`, `migration-1.5.sql` et `migration-1.6.sql` : les mises à jour de la base (comptes salariés, options, code de pointage, pertes par produit).
+- `supabase/migration-1.4.sql`, `migration-1.5.sql`, `migration-1.6.sql` et `migration-1.7.sql` : les mises à jour de la base (comptes salariés, options, code de pointage, pertes par produit).
 
 ## Administration
 
