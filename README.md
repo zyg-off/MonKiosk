@@ -15,7 +15,15 @@ Chaque commerce a son compte. Les données sont enregistrées en ligne et synchr
 - `web/` : l'application (une seule page HTML). C'est la version en ligne.
 - `desktop/` : l'application Windows, qui reprend automatiquement le contenu de `web/`.
 - `supabase/schema.sql` : la base de données complète (comptes, commerces, salariés, sécurité), pour une nouvelle installation.
-- `supabase/migration-1.4.sql` : la mise à jour de la base pour la version 1.4 (comptes salariés, pointage).
+- `supabase/migration-1.4.sql` et `migration-1.5.sql` : les mises à jour de la base (comptes salariés, options, code de pointage, pertes par produit).
+
+## Administration
+
+Les options avancées (espace salarié, badgeuse, coût salarial, registre PDF, statistiques) sont débloquées commerce par commerce par l'équipe MonKiosk, depuis *Compte > Administration MonKiosk*. Pour devenir administrateur, exécuter une fois dans Supabase :
+
+```sql
+insert into public.platform_admins (user_id) select id from auth.users where email = 'ADRESSE_DU_COMPTE';
+```
 - `web/config.js` : l'adresse du projet Supabase et sa clé publique.
 
 ## Publier une nouvelle version
