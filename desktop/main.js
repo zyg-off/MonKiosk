@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, dialog, nativeTheme } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -10,10 +10,19 @@ function send(status) {
   if (win && !win.isDestroyed()) win.webContents.send('update-status', status);
 }
 
+// Barre de titre aux couleurs de MonKiosk (boutons Windows conservés à droite)
+const BAR_HEIGHT = 36;
+function barColors() {
+  return nativeTheme.shouldUseDarkColors
+    ? { color: '#11161d', symbolColor: '#e7ebf1', height: BAR_HEIGHT }
+    : { color: '#f2f4f7', symbolColor: '#17202b', height: BAR_HEIGHT };
+}
+
 function createWindow() {
   win = new BrowserWindow({
     width: 1200, height: 820, minWidth: 380, minHeight: 600,
-    title: 'MonKiosk', backgroundColor: '#f2f4f7',
+    title: 'MonKiosk', backgroundColor: nativeTheme.shouldUseDarkColors ? '#11161d' : '#f2f4f7',
+    titleBarStyle: 'hidden', titleBarOverlay: barColors(),
     icon: path.join(__dirname, 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, nodeIntegration: false, preload: path.join(__dirname, 'preload.js') }
@@ -21,6 +30,9 @@ function createWindow() {
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('did-finish-load', () => send(lastStatus));
+  nativeTheme.on('updated', () => { if (win && !win.isDestroyed()) { try { win.setTitleBarOverlay(barColors()); } catch (e) {} } });
+  win.on('maximize', () => win.webContents.send('window-state', 'max'));
+  win.on('unmaximize', () => win.webContents.send('window-state', 'normal'));
 }
 
 /* ---------- Mises à jour automatiques (depuis les Releases GitHub) ---------- */

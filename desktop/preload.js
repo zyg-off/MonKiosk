@@ -4,5 +4,6 @@ contextBridge.exposeInMainWorld('monkioskDesktop', {
   version: () => ipcRenderer.invoke('app-version'),
   checkUpdates: () => ipcRenderer.invoke('check-updates'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
-  onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s))
+  onUpdate: (cb) => ipcRenderer.on('update-status', (_e, s) => cb(s)),
+  titleBar: true
 });

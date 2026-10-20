@@ -190,6 +190,15 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
   .nav .badge{position:static;margin-left:auto}
   .toast{left:calc(50% + 124px)}
 }
+/* barre de titre de l'appli Windows */
+.titlebar{display:none}
+body.desktop-app{padding-top:36px}
+body.desktop-app .titlebar{display:flex;position:fixed;top:0;left:0;right:0;height:36px;z-index:40;align-items:center;gap:8px;padding:0 150px 0 12px;background:var(--bg);-webkit-app-region:drag;user-select:none}
+.titlebar svg{width:18px;height:18px;flex:none}
+.titlebar strong{font-family:var(--f-display);font-weight:800;font-size:.85rem;letter-spacing:-.01em}
+.titlebar span{color:var(--muted);font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.desktop-app .auth{min-height:calc(100vh - 36px)}
+@media (min-width:960px){body.desktop-app .nav{top:36px;border-top:1px solid var(--line);border-top-right-radius:14px}}
 /* auth */
 .auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding-block:32px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
 .auth-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 24px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
@@ -251,6 +260,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 
 </head>
 <body>
+<div class="titlebar" id="titlebar"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2453c9"/><rect x="13" y="13" width="38" height="4" rx="2" fill="#fff"/><path d="M14 17h7v10a3.5 3.5 0 0 1-7 0zM28 17h8v10a4 4 0 0 1-8 0zM43 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#fff"/><path d="M21 17h7v10a3.5 3.5 0 0 1-7 0zM36 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#c8d6fa"/><rect x="13" y="36" width="38" height="15" rx="3" fill="#fff"/><rect x="18" y="41" width="28" height="3" rx="1.5" fill="#2453c9"/></svg><strong>MonKiosk</strong><span id="titlebar-shop"></span></div>
 <div class="auth" id="auth">
   <div class="auth-card">
     <div class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2453c9"/><rect x="13" y="13" width="38" height="4" rx="2" fill="#fff"/><path d="M14 17h7v10a3.5 3.5 0 0 1-7 0zM28 17h8v10a4 4 0 0 1-8 0zM43 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#fff"/><path d="M21 17h7v10a3.5 3.5 0 0 1-7 0zM36 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#c8d6fa"/><rect x="15" y="27" width="2.5" height="9" fill="#fff"/><rect x="46.5" y="27" width="2.5" height="9" fill="#fff"/><rect x="13" y="36" width="38" height="15" rx="3" fill="#fff"/><rect x="18" y="41" width="28" height="3" rx="1.5" fill="#2453c9"/></svg><strong>MonKiosk</strong></div>
@@ -1348,7 +1358,7 @@ function frError(e){const m=(e&&e.message)||'';
   return 'Une erreur est survenue : '+m;}
 function showApp(){
   $('auth').hidden=true;$('appmain').hidden=false;$('nav').hidden=false;document.body.classList.add('with-nav');
-  $('nav-shop').textContent=state.shop||(company&&company.name)||'Démo';
+  $('nav-shop').textContent=state.shop||(company&&company.name)||'Démo';$('titlebar-shop').textContent='· '+$('nav-shop').textContent;
   $('shopname').textContent='MonKiosk · '+(state.shop||(company&&company.name)||'Démo');
   $('account').hidden=mode==='demo';$('sync').hidden=false;
   render();
@@ -1497,6 +1507,7 @@ let desktopVersion='',updState={state:'idle'};
 function updLabel(){const s=updState;return {idle:'à jour',checking:'recherche en cours…',uptodate:'à jour',downloading:`téléchargement de la ${s.version||'nouvelle version'}${s.percent?' ('+s.percent+' %)':''}…`,ready:`version ${s.version} prête à installer`,error:'recherche impossible pour le moment'}[s.state]||'';}
 if(window.monkioskDesktop){
   $('a-download').hidden=true;
+  if(window.monkioskDesktop.titleBar)document.body.classList.add('desktop-app');
   window.monkioskDesktop.version().then(v=>desktopVersion=v);
   window.monkioskDesktop.onUpdate(s=>{const was=updState.state;updState=s;
     const t=$('upd-text');if(t)t.textContent=`Version ${desktopVersion} · ${updLabel()}`;
