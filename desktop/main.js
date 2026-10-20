@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu, ipcMain, dialog, nativeTheme } = require('electron');
+const { app, BrowserWindow, shell, Menu, ipcMain, nativeTheme } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -52,16 +52,8 @@ autoUpdater.on('update-available', (i) => send({ state: 'downloading', version: 
 autoUpdater.on('update-not-available', () => send({ state: 'uptodate' }));
 autoUpdater.on('download-progress', (p) => send({ state: 'downloading', version: lastStatus.version, percent: Math.round(p.percent) }));
 autoUpdater.on('error', (e) => send({ state: 'error', message: String(e && e.message || e) }));
-autoUpdater.on('update-downloaded', async (i) => {
-  send({ state: 'ready', version: i.version });
-  const r = await dialog.showMessageBox(win, {
-    type: 'info', buttons: ['Redémarrer maintenant', 'Plus tard'], defaultId: 0, cancelId: 1,
-    title: 'Mise à jour prête',
-    message: `MonKiosk ${i.version} est prête.`,
-    detail: 'L\'installation se fait en arrière-plan, en quelques secondes, puis MonKiosk se rouvre tout seul. Sinon, elle s\'installera discrètement à la prochaine fermeture.'
-  });
-  if (r.response === 0) autoUpdater.quitAndInstall(true, true);
-});
+// La fenêtre « mise à jour prête » est affichée par l'appli elle-même, aux couleurs de MonKiosk.
+autoUpdater.on('update-downloaded', (i) => send({ state: 'ready', version: i.version }));
 
 function check() {
   if (!app.isPackaged) return send({ state: 'uptodate' });

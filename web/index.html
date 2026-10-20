@@ -297,6 +297,8 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .group-title{display:flex;align-items:center;gap:8px;margin:14px 0 2px;font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 .group-title:first-child{margin-top:0}
 .group-title .count{font-weight:600;letter-spacing:0;text-transform:none}
+.upd-hero{display:flex;flex-direction:column;align-items:center;gap:10px;padding-top:6px}
+.upd-hero svg{width:64px;height:64px;border-radius:16px;box-shadow:0 10px 24px -10px rgba(36,83,201,.6)}
 /* print */
 #print-area{display:none}
 @media print{
@@ -1759,6 +1761,15 @@ document.addEventListener('change',async e2=>{
 function desktopBlock(){return window.monkioskDesktop?`<div class="note" style="flex-wrap:wrap;align-items:center"><p><time>Application Windows</time><span id="upd-text">Version ${esc(desktopVersion)} · ${updLabel()}</span></p><button type="button" class="btn sm" id="upd-btn">${updState.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour'}</button></div>`:'';}
 
 /* ---------- Appli Windows : version et mises à jour ---------- */
+function showUpdateReady(v){
+  if(!overlay.hidden){toast(`MonKiosk ${v} est prête : elle s'installera à la fermeture`);return;}
+  openSheet(`<div class="upd-hero"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2453c9"/><rect x="13" y="13" width="38" height="4" rx="2" fill="#fff"/><path d="M14 17h7v10a3.5 3.5 0 0 1-7 0zM28 17h8v10a4 4 0 0 1-8 0zM43 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#fff"/><path d="M21 17h7v10a3.5 3.5 0 0 1-7 0zM36 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#c8d6fa"/><rect x="13" y="36" width="38" height="15" rx="3" fill="#fff"/><rect x="18" y="41" width="28" height="3" rx="1.5" fill="#2453c9"/></svg><span class="chip ok">Nouvelle version</span></div>
+  <h2 style="text-align:center">MonKiosk ${esc(v)} est prête</h2>
+  <p class="muted small" style="margin:0;text-align:center">L'installation se fait en arrière-plan en quelques secondes, puis MonKiosk se rouvre tout seul. Tes données sont en ligne : rien n'est perdu.</p>
+  <div class="sheet-actions" style="justify-content:center"><button type="button" class="btn" id="f-cancel">Plus tard</button><button type="button" class="btn primary" id="upd-now">Redémarrer maintenant</button></div>
+  <p class="muted small" style="margin:0;text-align:center">Si tu choisis « Plus tard », elle s'installera discrètement à la prochaine fermeture.</p>`,{type:'update'},null);
+}
+document.addEventListener('click',ev=>{if(ev.target.id==='upd-now'&&window.monkioskDesktop){ev.target.disabled=true;ev.target.textContent='Installation…';window.monkioskDesktop.installUpdate();}});
 let desktopVersion='',updState={state:'idle'};
 function updLabel(){const s=updState;return {idle:'à jour',checking:'recherche en cours…',uptodate:'à jour',downloading:`téléchargement de la ${s.version||'nouvelle version'}${s.percent?' ('+s.percent+' %)':''}…`,ready:`version ${s.version} prête à installer`,error:'recherche impossible pour le moment'}[s.state]||'';}
 if(window.monkioskDesktop){
@@ -1768,7 +1779,7 @@ if(window.monkioskDesktop){
   window.monkioskDesktop.onUpdate(s=>{const was=updState.state;updState=s;
     const t=$('upd-text');if(t)t.textContent=`Version ${desktopVersion} · ${updLabel()}`;
     const b=$('upd-btn');if(b)b.textContent=s.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour';
-    if(s.state==='ready'&&was!=='ready')toast(`MonKiosk ${s.version} est prête à être installée`);});
+    if(s.state==='ready'&&was!=='ready')showUpdateReady(s.version);});
   document.addEventListener('click',ev=>{if(ev.target.id==='upd-btn'){updState.state==='ready'?window.monkioskDesktop.installUpdate():window.monkioskDesktop.checkUpdates();}});
 }
 
