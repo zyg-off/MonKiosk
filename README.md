@@ -6,7 +6,7 @@ L'outil de gestion des petits commerces : planning d'équipe, congés, annonces,
 
 - **En ligne et sur téléphone** : https://zyg-off.github.io/MonKiosk/
   Sur téléphone, ajoute la page à l'écran d'accueil pour l'installer comme une appli.
-- **Sur PC Windows** : télécharge `MonKiosk-Setup.exe` dans la page [Releases](https://github.com/zyg-off/MonKiosk/releases).
+- **Sur PC Windows** : [télécharger l'installateur](https://github.com/zyg-off/MonKiosk/releases/latest/download/MonKiosk-Installer.exe). Ce lien donne toujours la dernière version, et l'appli se met ensuite à jour toute seule.
 
 Chaque commerce a son compte. Les données sont enregistrées en ligne et synchronisées en direct entre le site, le téléphone et l'appli PC. Le bouton *Découvrir la démo* ouvre un exemple sans rien enregistrer.
 

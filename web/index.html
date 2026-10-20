@@ -226,6 +226,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 
     <div class="divider">ou</div>
     <button type="button" class="btn" id="a-demo">Découvrir la démo</button>
+    <a class="linkbtn" id="a-download" href="https://github.com/zyg-off/MonKiosk/releases/latest/download/MonKiosk-Installer.exe" style="align-self:center;font-size:.88rem">Télécharger MonKiosk pour Windows</a>
   </div>
 </div>
 
@@ -945,6 +946,7 @@ $('account').onclick=()=>{
 let desktopVersion='',updState={state:'idle'};
 function updLabel(){const s=updState;return {idle:'à jour',checking:'recherche en cours…',uptodate:'à jour',downloading:`téléchargement de la ${s.version||'nouvelle version'}${s.percent?' ('+s.percent+' %)':''}…`,ready:`version ${s.version} prête à installer`,error:'recherche impossible pour le moment'}[s.state]||'';}
 if(window.monkioskDesktop){
+  $('a-download').hidden=true;
   window.monkioskDesktop.version().then(v=>desktopVersion=v);
   window.monkioskDesktop.onUpdate(s=>{const was=updState.state;updState=s;
     const t=$('upd-text');if(t)t.textContent=`Version ${desktopVersion} · ${updLabel()}`;

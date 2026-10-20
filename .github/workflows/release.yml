@@ -29,7 +29,7 @@ jobs:
           name: MonKiosk ${{ steps.version.outputs.v }}
           target_commitish: ${{ github.sha }}
           files: |
-            desktop/dist/MonKiosk-Setup-*.exe
-            desktop/dist/MonKiosk-Setup-*.exe.blockmap
+            desktop/dist/MonKiosk-Installer.exe
+            desktop/dist/MonKiosk-Installer.exe.blockmap
             desktop/dist/latest.yml
           generate_release_notes: true
