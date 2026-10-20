@@ -302,6 +302,23 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .etab{display:flex;flex-direction:column;gap:18px}
 .cell.unavail{background:repeating-linear-gradient(135deg,var(--soft) 0 6px,transparent 6px 12px);color:var(--muted)}
 .read-by{font-size:.75rem;color:var(--muted);font-weight:600;margin-top:4px;display:block}
+/* calendrier mensuel (salarié) */
+.mcal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.mcal-nav{display:flex;align-items:center;gap:4px}
+.mcal-nav strong{font-family:var(--f-display);font-size:1.05rem;text-transform:capitalize;min-width:150px;text-align:center}
+.mcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.mcal .wd{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;text-align:center;padding:2px 0}
+.mcal .day{border:1px solid var(--line);background:var(--surface);border-radius:10px;min-height:76px;padding:6px;display:flex;flex-direction:column;gap:4px;text-align:left;color:var(--ink);min-width:0}
+.mcal .day:hover{border-color:var(--field-hover)}
+.mcal .day.out{opacity:.35}
+.mcal .day.today{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.mcal .day.sel{background:var(--accent-soft);border-color:var(--accent)}
+.mcal .day.unavail{background-image:repeating-linear-gradient(135deg,var(--soft) 0 6px,transparent 6px 12px)}
+.mcal .num{font-weight:700;font-size:.85rem;font-variant-numeric:tabular-nums}
+.mcal .pill{border-radius:6px;padding:2px 5px;font-size:.7rem;font-weight:700;font-family:var(--f-mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mcal .tag{font-size:.68rem;font-weight:700;border-radius:6px;padding:2px 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:560px){.mcal .day{min-height:54px;padding:4px}.mcal .pill{font-size:0;padding:0;height:6px;border-radius:99px}.mcal .tag{font-size:0;padding:0;height:6px;border-radius:99px}}
+.day-detail{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 /* print */
 #print-area{display:none}
 @media print{
@@ -472,6 +489,10 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         <ul class="list" id="postes"></ul>
       </div>
     </div>
+    <div class="card" id="swaps-card"><h2 class="hi" data-icon="swap">Échanges de créneaux</h2><ul class="list" id="swaps"></ul></div>
+    <div class="card" id="recap-card"><div class="card-head"><h2 class="hi" data-icon="clock">Heures du mois</h2><div class="row" style="gap:8px"><input type="month" id="recap-month" aria-label="Mois"><button type="button" class="btn sm" id="recap-csv">Exporter (CSV)</button></div></div>
+      <p class="muted small" style="margin:0">Heures prévues et pointées par salarié, à transmettre pour la paie.</p>
+      <div style="overflow-x:auto"><table class="loss-table" id="recap"></table></div></div>
     <div class="card" id="reports-card"><h2 class="hi" data-icon="alert">Signalements de l'équipe</h2><ul class="list" id="reports"></ul></div>
     <div class="card" id="accounts-card" hidden>
       <div class="card-head"><h2 class="hi" data-icon="key">Comptes salariés</h2></div>
@@ -557,6 +578,9 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
         <div class="card" id="e-plan"></div>
         <div class="card"><h2 class="hi" data-icon="clock">Mes heures</h2><div id="e-hours"></div></div>
       </div>
+      <div class="card" id="e-swap-card"><h2 class="hi" data-icon="swap">Échanges de créneaux</h2>
+        <p class="muted small" style="margin:0">Un empêchement ? Choisis le jour dans ton calendrier et demande un remplaçant. Tes collègues peuvent proposer de te remplacer, puis ton responsable valide.</p>
+        <ul class="list" id="e-swaps"></ul></div>
       <div class="card" id="e-avail-card"><h2 class="hi" data-icon="calendar">Mes disponibilités</h2>
         <p class="muted small" style="margin:0">Indique les jours où tu ne peux pas travailler chaque semaine. Ton responsable les voit dans le planning.</p>
         <label class="muted small" style="display:flex;flex-direction:column;gap:4px;font-weight:600">Motif, si tu en indiques un (facultatif)<input type="text" id="e-anote" maxlength="80" placeholder="Ex. Cours le lundi"></label>
@@ -629,7 +653,8 @@ const ICONS={
   pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
   folder:'<path d="M3 6h6l2 2h10v11H3z"/>',
   calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  alert:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>'
+  alert:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17.5v.5"/>',
+  swap:'<path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/>'
 };
 function ic(n){return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;}
 document.querySelectorAll('[data-icon]').forEach(h=>h.insertAdjacentHTML('afterbegin',ic(h.dataset.icon)));
@@ -744,9 +769,9 @@ function emptyState(name){
       {id:uid(),name:'Fermeture',items:[{id:uid(),text:'Nettoyer les plans de travail'},{id:uid(),text:'Noter les invendus'},{id:uid(),text:'Compter la caisse'},{id:uid(),text:"Activer l'alarme"}]}
     ],
     done:{},equipments:[{name:'Chambre froide',min:0,max:4},{name:'Vitrine réfrigérée',min:0,max:4},{name:'Congélateur',min:-30,max:-18}],
-    temps:[],stock:[],sales:{},settings:{charges:42,goal:0,tempHour:10,notify:false},punches:[],losses:[],templates:[],products:[],lossDays:{},reports:[],availability:{}};
+    temps:[],stock:[],sales:{},settings:{charges:42,goal:0,tempHour:10,notify:false},punches:[],losses:[],templates:[],products:[],lossDays:{},reports:[],availability:{},swaps:[]};
 }
-function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});s.settings=Object.assign({},e.settings,(d&&d.settings)||{});['postes','employees','leaves','notes','temps','stock','lists','equipments','punches','losses','templates','products','reports'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales','lossDays','availability'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
+function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});s.settings=Object.assign({},e.settings,(d&&d.settings)||{});['postes','employees','leaves','notes','temps','stock','lists','equipments','punches','losses','templates','products','reports','swaps'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales','lossDays','availability'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
 
 const CFG=window.MONKIOSK_CONFIG||{};
 let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,punchCode='',isAdmin=false,pendingPunch=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false,editSeq=0,base=null,eView=null,memberships=[],members=[],joinCode='';
@@ -834,6 +859,7 @@ function homeAlerts(){
   if(feat('hygiene'))todayTemps().filter(t=>!tempOk(t)).forEach(t=>{const eq=state.equipments.find(e=>e.name===t.equip);a.push({lvl:'crit',tag:'Hygiène',txt:`<b>${esc(t.equip)}</b> à ${num(t.val)} °C. Elle doit rester entre ${eq.min} et ${eq.max} °C.`,go:'taches'});});
   reminders().forEach(x=>a.push(x));
   analyse(thisMonday).out.forEach(x=>a.push(x));
+  if(feat('echanges'))state.swaps.filter(x=>x.status==='proposé').forEach(x=>a.push({lvl:'warn',tag:'Échange',txt:`<b>${esc(empName(x.volunteer))}</b> propose de remplacer <b>${esc(empName(x.emp))}</b> le ${fmtDM.format(fromKey(x.date))}.`,go:'equipe'}));
   if(feat('signalements'))state.reports.filter(r=>r.status==='ouvert').forEach(r=>a.push({lvl:'warn',tag:'Signalement',txt:`<b>${esc(empName(r.emp))}</b> : ${esc(r.text)}`,go:'equipe'}));
   if(feat('conges'))pendingLeaves().forEach(l=>a.push({lvl:'warn',tag:'Congés',txt:`<b>${esc(empName(l.emp))}</b> demande ${l.type.toLowerCase()} du ${fmtDM.format(fromKey(l.from))} au ${fmtDM.format(fromKey(l.to))}.`,go:'equipe'}));
   const low=feat('stock')?lowStock():[];if(low.length)a.push({lvl:'warn',tag:'Stock',txt:`${low.length} article${low.length>1?'s':''} sous le seuil : ${low.map(s=>esc(s.name)).join(', ')}.`,go:'stock'});
@@ -858,6 +884,7 @@ const MODULES=[
   {key:'stock_staff',name:"Stock pour l'équipe",desc:"Les salariés peuvent mettre à jour les quantités depuis leur espace."},
   {key:'dispos',name:'Disponibilités',desc:'Les salariés indiquent leurs jours indisponibles, visibles dans le planning.'},
   {key:'signalements',name:'Signalements',desc:"Les salariés signalent une panne, une casse ou un souci d'hygiène."},
+  {key:'echanges',name:'Échanges de créneaux',desc:'Les salariés demandent un remplaçant, un collègue se propose, tu valides.'},
   {key:'semaines',name:'Semaines types',desc:'Modèles de planning réutilisables.'},
   {key:'rappels',name:'Rappels',desc:'Alertes si les relevés et les checklists ne sont pas faits.'},
   {key:'espace',name:'Espace salarié',desc:'Comptes pour les salariés : planning, congés, tâches, pertes.',premium:true},
@@ -871,10 +898,11 @@ function feat(key){if(mode==='demo')return true;if(!unlocked(key))return false;r
 function gate(el,on){if(el)el.hidden=!on;}
 function applyGates(){
   const card=id=>$(id)&&$(id).closest('.card');
-  gate(card('leaves'),feat('conges'));gate($('reports-card'),feat('signalements'));
+  gate(card('leaves'),feat('conges'));gate($('reports-card'),feat('signalements'));gate($('swaps-card'),feat('echanges'));
   gate(card('notes'),feat('annonces'));gate(card('home-note'),feat('annonces'));
   gate($('checklists'),feat('taches'));gate($('list-actions'),feat('taches'));gate(card('home-tasks'),feat('taches'));
   gate(card('temps'),feat('hygiene'));gate($('register-btn'),feat('registre'));
+  gate($('recap-csv'),!(document.documentElement.dataset.framed));
   ['s-date','sales-kpis','sales-chart','home-sales'].forEach(id=>gate(card(id),feat('ventes')));
   gate(card('month-box'),feat('stats')&&feat('ventes'));
   gate($('loss-card'),feat('pertes'));
@@ -896,7 +924,7 @@ function renderNav(){
   $('viewtitle').textContent=VIEWS[view];
   const badge=(id,n)=>{const b=$(id);b.hidden=!n;b.textContent=n;};
   badge('b-planning',analyse(thisMonday).out.filter(a=>a.lvl==='crit').length);
-  badge('b-equipe',(feat('conges')?pendingLeaves().length:0)+(feat('signalements')?state.reports.filter(r=>r.status==='ouvert').length:0));
+  badge('b-equipe',(feat('conges')?pendingLeaves().length:0)+(feat('signalements')?state.reports.filter(r=>r.status==='ouvert').length:0)+(feat('echanges')?state.swaps.filter(x=>x.status==='proposé').length:0));
   badge('b-taches',feat('hygiene')?todayTemps().filter(t=>!tempOk(t)).length:0);
   badge('b-stock',feat('stock')?lowStock().length:0);
 }
@@ -975,11 +1003,32 @@ function renderTeam(){
   $('notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}${feat('espace')&&withAcc?`<span class="read-by" title="${esc((n.read||[]).map(empName).join(', '))}">Lu par ${(n.read||[]).length} / ${withAcc}${(n.read||[]).length?' : '+esc((n.read||[]).map(empName).join(', ')):''}</span>`:''}</p><button type="button" class="x" data-delnote="${n.id}" aria-label="Supprimer l'annonce">×</button></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
   const tot=analyse(thisMonday).totals;
   $('staff').innerHTML=state.employees.map(e=>{const acc=members.some(m=>m.employee_id===e.id);const wk=weekWorked(e.id);
-    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
-  renderPunches();renderAccounts();
+    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${e.phone?' · '+esc(e.phone):''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
+  renderPunches();renderAccounts();renderRecap();
+  {const SW=[...state.swaps].filter(x=>x.status==='proposé'||x.status==='ouvert'||x.date>=k(addDays(today,-30))).sort((a,b)=>({proposé:0,ouvert:1}[a.status]??2)-({proposé:0,ouvert:1}[b.status]??2)||a.date.localeCompare(b.date));
+   const when=x=>`${DAYS_LONG[(fromKey(x.date).getDay()+6)%7]} ${fmtDM.format(fromKey(x.date))} · ${x.s}–${x.e}`;
+   $('swaps').innerHTML=SW.map(x=>`<li style="flex-wrap:wrap"><span class="chip ${x.status==='proposé'?'info':x.status==='validé'?'ok':x.status==='refusé'?'crit':'warn'}">${{ouvert:'Recherche',proposé:'À valider',validé:'Validé',refusé:'Refusé'}[x.status]||x.status}</span>
+     <span class="grow"><strong>${esc(empName(x.emp))}${x.volunteer?' → '+esc(empName(x.volunteer)):''}</strong><span class="muted small">${when(x)}${x.note?' · '+esc(x.note):''}</span></span>
+     ${x.status==='proposé'?`<button type="button" class="btn sm primary" data-swapok="${x.id}">Valider l'échange</button><button type="button" class="btn sm danger" data-swapno="${x.id}">Refuser</button>`:x.status==='ouvert'?`<button type="button" class="btn sm danger" data-swapno="${x.id}">Refuser</button>`:`<button type="button" class="x" data-swapdel="${x.id}" aria-label="Supprimer">×</button>`}</li>`).join('')||'<li class="empty-note">Aucun échange en cours.</li>';}
   const RP=[...state.reports].sort((a,b)=>(a.status==='ouvert'?0:1)-(b.status==='ouvert'?0:1)||b.at.localeCompare(a.at)).filter(r=>r.status==='ouvert'||r.at.slice(0,10)>=k(addDays(today,-30)));
   $('reports').innerHTML=RP.map(r=>`<li style="flex-wrap:wrap"><span class="chip ${r.status==='ouvert'?'warn':'ok'}">${esc(r.kind)}</span><span class="grow"><strong>${esc(r.text)}</strong><span class="muted small">${esc(empName(r.emp))} · ${fmtShort.format(new Date(r.at))} à ${hm(r.at)}${r.status==='ouvert'?'':' · traité'}</span></span>${r.status==='ouvert'?`<button type="button" class="btn sm" data-rdone="${r.id}">Marquer comme traité</button>`:''}<button type="button" class="x" data-rdel="${r.id}" aria-label="Supprimer">×</button></li>`).join('')||'<li class="empty-note">Aucun signalement.</li>';
 }
+function monthRecap(month){
+  const [y,m]=month.split('-').map(Number),dim=new Date(y,m,0).getDate();
+  return state.employees.map(e=>{let plan=0,worked=0,days=0;
+    for(let d=1;d<=dim;d++){const dt=new Date(y,m-1,d),x=((state.weeks[k(monday(dt))]||{})[e.id]||{})[(dt.getDay()+6)%7];if(x){plan+=dur(x.s,x.e);days++;}
+      worked+=workedMin(punchesOf(state.punches,e.id,k(dt)));}
+    return {e,plan,worked,days};});
+}
+function renderRecap(){
+  if(!$('recap-month').value)$('recap-month').value=todayKey.slice(0,7);
+  const rows=monthRecap($('recap-month').value),pt=feat('badgeuse');
+  $('recap').innerHTML=rows.length?`<thead><tr><th>Salarié</th><th style="text-align:right">Jours</th><th style="text-align:right">Prévu</th>${pt?'<th style="text-align:right">Pointé</th><th style="text-align:right">Écart</th>':''}</tr></thead><tbody>${rows.map(r=>`<tr><td><strong>${esc(r.e.name)}</strong></td><td class="num">${r.days}</td><td class="num">${fh(r.plan)}</td>${pt?`<td class="num">${fh(r.worked)}</td><td class="num">${r.worked||r.plan?(r.worked>=r.plan?'+':'−')+fh(Math.abs(r.worked-r.plan)):'—'}</td>`:''}</tr>`).join('')}</tbody>`:'<tbody><tr><td class="empty-note">Ajoute ton équipe pour voir le récapitulatif.</td></tr></tbody>';
+}
+$('recap-month').onchange=renderRecap;
+$('recap-csv').onclick=()=>{const month=$('recap-month').value||todayKey.slice(0,7),rows=monthRecap(month),pt=feat('badgeuse'),hh=v=>`${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`;
+  const lines=[['Salarié','Poste','Contrat (h/sem.)','Jours planifiés','Heures prévues',...(pt?['Heures pointées']:[])].join(';'),...rows.map(r=>[r.e.name,r.e.poste,r.e.contract,r.days,hh(r.plan),...(pt?[hh(r.worked)]:[])].join(';'))];
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'}));a.download=`heures-${month}.csv`;document.body.appendChild(a);a.click();a.remove();toast('Récapitulatif exporté');};
 function renderPostes(){
   const used={};Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{used[x.p]=(used[x.p]||0)+1;})));
   $('postes').innerHTML=postes().map((p,i)=>`<li><span class="chip pc${p.color}">${esc(p.name)}</span><span class="grow muted small">${used[p.name]?used[p.name]+' créneau'+(used[p.name]>1?'x':''):'Pas encore utilisé'}</span><button type="button" class="btn sm" data-poste="${i}">Modifier</button></li>`).join('');
@@ -1051,7 +1100,8 @@ function openShift(e,d){
   openSheet(`<h2>${esc(emp.name)} · ${DAYS_LONG[d]} ${fmtDay.format(addDays(weekStart,d))}</h2>
   <div class="presets"><button type="button" data-p="05:00-12:00">Matin 5h–12h</button><button type="button" data-p="06:30-13:30">Vente matin</button><button type="button" data-p="13:00-20:00">Après-midi</button><button type="button" data-p="14:00-21:00">Fermeture</button></div>
   <div class="two"><label>Début<input type="time" id="f-s" value="${x?x.s:'05:00'}"></label><label>Fin<input type="time" id="f-e" value="${x?x.e:'12:00'}"></label></div>
-  <label>Poste<select id="f-p">${postes().map(o=>o.name).concat(x&&!postes().some(o=>o.name===x.p)?[x.p]:[]).map(p=>`<option ${((x?x.p:emp.poste)===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>${actions(x?'Mettre en repos':'')}`,{type:'shift',e,d},'f-s');
+  ${x?'':''}<label>Poste<select id="f-p">${postes().map(o=>o.name).concat(x&&!postes().some(o=>o.name===x.p)?[x.p]:[]).map(p=>`<option ${((x?x.p:emp.poste)===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
+  <button type="button" class="btn sm" data-fillweek style="align-self:flex-start">Recopier sur les jours libres (lun.–sam.)</button>${actions(x?'Mettre en repos':'')}`,{type:'shift',e,d},'f-s');
 }
 function openEmp(id){
   const emp=id?state.employees.find(x=>x.id===id):null;
@@ -1059,7 +1109,7 @@ function openEmp(id){
   <label>Prénom<input type="text" id="f-name" value="${emp?esc(emp.name):''}" placeholder="Ex. Camille"></label>
   <div class="two"><label>Poste principal<select id="f-poste">${postes().map(o=>o.name).map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
   <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>
-  <label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
+  <div class="two"><label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label><label>Téléphone<input type="tel" id="f-phone2" value="${emp&&emp.phone?esc(emp.phone):''}" placeholder="06 12 34 56 78"></label></div>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
 }
 function openPoste(i){
   const p=i==null?null:postes()[i];const used=new Set(postes().map(x=>x.color));
@@ -1112,6 +1162,10 @@ sheet.addEventListener('click',ev=>{
   const eq=ev.target.closest('[data-equip]');if(eq){openEquip(+eq.dataset.equip);return;}
   if(ev.target.closest('[data-equipnew]')){openEquip(null);return;}
   const ep=ev.target.closest('[data-epre]');if(ep){const[a,b]=ep.dataset.epre.split(':');$('f-emin').value=a;$('f-emax').value=b;return;}
+  if(ev.target.closest('[data-fillweek]')&&ctx.type==='shift'){const st=$('f-s').value,en=$('f-e').value,po=$('f-p').value;if(!st||!en||st===en)return toast('Indique une heure de début et de fin différentes');
+    const key=k(weekStart);state.weeks[key]=state.weeks[key]||{};const w=(state.weeks[key][ctx.e]=state.weeks[key][ctx.e]||{});let n=0;
+    for(let d=0;d<6;d++){if(w[d]&&d!==ctx.d)continue;const av=((state.availability||{})[ctx.e]||{})[d];if(d!==ctx.d&&(leaveOn(ctx.e,k(addDays(weekStart,d)))||(av&&av.off)))continue;w[d]={s:st,e:en,p:po};n++;}
+    toast(`Créneau recopié sur ${n} jour${n>1?'s':''}`);commit();closeSheet();return;}
   const lm=ev.target.closest('[data-lmove]');if(lm&&ctx.type==='list'){const l=state.lists.find(x=>x.id===ctx.id),[j,dl]=lm.dataset.lmove.split(':').map(Number),t=j+dl;
     if(l&&t>=0&&t<l.items.length){[l.items[j],l.items[t]]=[l.items[t],l.items[j]];commit();openList(ctx.id);}return;}
   if(ev.target.closest('[data-prodnew]')){openProduct(null);return;}
@@ -1165,9 +1219,9 @@ sheet.addEventListener('submit',ev=>{
   }else if(ctx.type==='emp'){
     const name=$('f-name').value.trim();if(!name)return toast('Indique un prénom');
     const contract=Math.max(1,Math.min(48,parseInt($('f-contract').value,10)||35));
-    const rate=Math.max(0,parseFloat($('f-rate').value)||0);
-    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate});
-    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate});
+    const rate=Math.max(0,parseFloat($('f-rate').value)||0),phone=$('f-phone2').value.trim().slice(0,20);
+    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate,phone});
+    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate,phone});
     toast('Équipe mise à jour');
   }else if(ctx.type==='leave'){
     if(!state.employees.length)return toast("Ajoute d'abord un salarié");
@@ -1183,6 +1237,8 @@ sheet.addEventListener('submit',ev=>{
     else{const old=state.postes[ctx.i].name;state.postes[ctx.i]={name,color:ctx.color};
       if(old!==name){Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{if(x.p===old)x.p=name;})));state.employees.forEach(e=>{if(e.poste===old)e.poste=name;});}}
     toast('Postes mis à jour');
+  }else if(ctx.type==='account'&&mode==='employee'){
+    empAction('profile',{phone:$('f-phone').value.trim()}).then(ok=>{if(ok)toast('Téléphone enregistré');});closeSheet();return;
   }else if(ctx.type==='account'){
     const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
     state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;$('nav-shop').textContent=name;$('titlebar-shop').textContent='· '+name;
@@ -1228,6 +1284,12 @@ document.addEventListener('click',ev=>{
   if(ds.leaveOk){state.leaves.find(l=>l.id===ds.leaveOk).status='validé';toast('Congé validé');return commit();}
   if(ds.leaveNo){state.leaves.find(l=>l.id===ds.leaveNo).status='refusé';toast('Demande refusée');return commit();}
   if(ds.leaveDel){state.leaves=state.leaves.filter(l=>l.id!==ds.leaveDel);return commit();}
+  if(ds.swapok){const x=state.swaps.find(y=>y.id===ds.swapok);if(!x)return;const dt=fromKey(x.date),wk=k(monday(dt)),di=(dt.getDay()+6)%7;
+    state.weeks[wk]=state.weeks[wk]||{};const w=state.weeks[wk],sh=(w[x.emp]||{})[di]||{s:x.s,e:x.e,p:x.p};
+    if((w[x.volunteer]||{})[di])return toast(`${empName(x.volunteer)} a déjà un créneau ce jour-là`);
+    if(w[x.emp])delete w[x.emp][di];(w[x.volunteer]=w[x.volunteer]||{})[di]=sh;x.status='validé';toast('Échange validé : le planning est à jour');return commit();}
+  if(ds.swapno){const x=state.swaps.find(y=>y.id===ds.swapno);if(x)x.status='refusé';toast('Échange refusé');return commit();}
+  if(ds.swapdel){state.swaps=state.swaps.filter(y=>y.id!==ds.swapdel);return commit();}
   if(ds.rdone){const r=state.reports.find(x=>x.id===ds.rdone);if(r)r.status='traité';toast('Signalement traité');return commit();}
   if(ds.rdel){state.reports=state.reports.filter(x=>x.id!==ds.rdel);return commit();}
   if(ds.delnote){state.notes=state.notes.filter(n=>n.id!==ds.delnote);return commit();}
@@ -1544,6 +1606,11 @@ function renderEmployeeNav(){
   const dn=eView.done||{},left=F.taches===false?0:(eView.lists||[]).reduce((p,l)=>p+l.items.filter(i=>!dn[i.id]).length,0);
   const bt=$('b-e-taches');if(bt){bt.hidden=!left;bt.textContent=left;}
 }
+document.addEventListener('click',ev=>{
+  if(mode!=='employee')return;const c=ev.target.closest('[data-ecal]'),n=ev.target.closest('[data-ecalnav]');
+  if(c){eCalSel=c.dataset.ecal;const dt=fromKey(eCalSel);if(dt.getMonth()!==eCalMonth.getMonth())eCalMonth=new Date(dt.getFullYear(),dt.getMonth(),1);renderEmployee();}
+  if(n){eCalMonth=new Date(eCalMonth.getFullYear(),eCalMonth.getMonth()+Number(n.dataset.ecalnav),1);renderEmployee();}
+});
 document.addEventListener('click',ev=>{const b=ev.target.closest('[data-eview]');if(!b||mode!=='employee')return;eTab=b.dataset.eview;renderEmployeeNav();window.scrollTo(0,0);});
 function renderEmployee(){
   const e=eView.employee||{},eid=e.id,di=(today.getDay()+6)%7,F=eView.features||{};
@@ -1555,10 +1622,7 @@ function renderEmployee(){
     ${!F.badgeuse?'':pendingPunch?`<div class="row"><input type="text" id="e-pcode" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Code du jour" aria-label="Code du jour" style="max-width:160px;letter-spacing:.3em;font-size:1.2rem;text-align:center"><button type="button" class="btn primary" data-eact="punchgo" data-kind="${pendingPunch}">Valider</button><button type="button" class="btn" data-eact="punchcancel">Annuler</button></div><p class="muted small" style="margin:0">Saisis le code à 4 chiffres affiché en boutique aujourd'hui.</p>`:
     `<button type="button" class="btn primary" style="padding:16px;font-size:1.05rem" data-eact="punch" data-kind="${inNow?'out':'in'}">${inNow?'Je termine ma journée':'Je commence ma journée'}</button>`}
     ${ps.length?`<p class="muted small" style="margin:0">${ps.map(p=>(p.kind==='in'?'Arrivée ':'Départ ')+hm(p.at)).join(' · ')} · ${fh(workedMin(ps))} travaillées</p>`:''}`;
-  const weekHTML=ws=>{let t=0,rows='';for(let d=0;d<7;d++){const dt=addDays(ws,d),sh=shift(ws,d),lv=lvOn(k(dt));if(sh)t+=dur(sh.s,sh.e);
-      rows+=`<li><span class="grow"><strong>${DAYS_LONG[d]} ${fmtDay.format(dt)}</strong></span>${sh?`<span class="chip ${pcls(sh.p)}">${esc(sh.p)}</span><span class="qty small">${sh.s}–${sh.e}</span>`:lv?`<span class="chip p-leave">${esc(lv.type)}</span>`:'<span class="muted small">Repos</span>'}</li>`;}
-    return `<div class="card-head"><h3>Semaine du ${fmtDM.format(ws)}</h3><span class="muted small">${fh(t)}</span></div><ul class="list">${rows}</ul>`;};
-  $('e-plan').innerHTML=`<div class="card-head"><h2 class="hi">${ic('calendar')}Mon planning</h2><button type="button" class="btn sm" data-eact="ics">Ajouter à mon agenda</button></div>`+weekHTML(thisMonday)+weekHTML(addDays(thisMonday,7));
+  renderECal(shift,lvOn);
   const dn=eView.done||{};
   $('e-tasks').innerHTML=(F.taches===false?[]:(eView.lists||[])).map(l=>`<div class="card-head" style="margin-top:6px"><strong>${esc(l.name)}</strong><span class="muted small">${l.items.filter(i=>dn[i.id]).length} / ${l.items.length}</span></div>
     <ul class="list" style="margin-bottom:8px">${l.items.map(i=>`<li><label class="check ${dn[i.id]?'done':''}"><input type="checkbox" data-etask="${i.id}" ${dn[i.id]?'checked':''}><span>${esc(i.text)}</span></label></li>`).join('')}</ul>`).join('')+
@@ -1595,15 +1659,40 @@ function renderEmployee(){
   // Signalements
   gate($('e-report-card'),F.signalements!==false);
   $('e-reports').innerHTML=(eView.reports||[]).map(r=>`<li><span class="chip ${r.status==='ouvert'?'warn':'ok'}">${r.status==='ouvert'?'Envoyé':'Traité'}</span><span class="grow"><strong>${esc(r.text)}</strong><span class="muted small">${esc(r.kind)} · ${fmtShort.format(new Date(r.at))}</span></span></li>`).join('');
+  // Échanges de créneaux
+  gate($('e-swap-card'),F.echanges!==false);
+  {const SW=eView.swaps||[],me=eid,mine=SW.filter(x=>x.emp===me),theirs=SW.filter(x=>x.emp!==me);
+   const when=x=>`${DAYS_LONG[(fromKey(x.date).getDay()+6)%7]} ${fmtDM.format(fromKey(x.date))} · ${x.s}–${x.e}`;
+   $('e-swaps').innerHTML=mine.map(x=>`<li style="flex-wrap:wrap"><span class="chip ${x.status==='proposé'?'info':x.status==='validé'?'ok':x.status==='refusé'?'crit':'warn'}">${{ouvert:'Recherche',proposé:'Remplaçant trouvé',validé:'Validé',refusé:'Refusé'}[x.status]||x.status}</span><span class="grow"><strong>Mon créneau du ${when(x)}</strong><span class="muted small">${x.status==='proposé'?esc(x.vname||'Un collègue')+' peut te remplacer · en attente du responsable':x.note?esc(x.note):''}</span></span>${x.status==='ouvert'||x.status==='proposé'?`<button type="button" class="btn sm" data-eact="swapcancel" data-id="${x.id}">Annuler</button>`:''}</li>`).join('')+
+     theirs.map(x=>{const mine2=x.volunteer===me;const busy=!!shift(monday(fromKey(x.date)),(fromKey(x.date).getDay()+6)%7);
+       return `<li style="flex-wrap:wrap"><span class="chip ${mine2?'info':'warn'}">${mine2?'Proposé':'Cherche'}</span><span class="grow"><strong>${esc(x.name||'Un collègue')} · ${when(x)}</strong><span class="muted small">${esc(x.p||'')}${x.note?' · '+esc(x.note):''}${mine2?' · en attente du responsable':''}</span></span>${mine2?`<button type="button" class="btn sm" data-eact="swapcancel" data-id="${x.id}">Me retirer</button>`:busy?'<span class="muted small">Tu travailles ce jour-là</span>':`<button type="button" class="btn sm primary" data-eact="swapvol" data-id="${x.id}">Je peux le remplacer</button>`}</li>`;}).join('')||'<li class="empty-note">Aucun échange en cours.</li>';}
   // Disponibilités
   gate($('e-avail-card'),F.dispos!==false);
   {const AV=eView.availability||{};
    $('e-avail').innerHTML=DAYS_LONG.map((dl,d)=>{const a=AV[d];return `<li><span class="grow"><strong>${dl}</strong><span class="muted small">${a&&a.off?'Indisponible'+(a.note?' · '+esc(a.note):''):'Disponible'}</span></span><button type="button" class="btn sm ${a&&a.off?'':'danger'}" data-eact="avail" data-day="${d}" data-off="${a&&a.off?'0':'1'}">${a&&a.off?'Redevenir disponible':'Indisponible'}</button></li>`;}).join('');}
   renderEmployeeNav();
 }
+let eCalMonth=new Date(today.getFullYear(),today.getMonth(),1),eCalSel=todayKey;
+function renderECal(shift,lvOn){
+  const F=eView.features||{},AV=eView.availability||{},first=eCalMonth,y=first.getFullYear(),m=first.getMonth(),dim=new Date(y,m+1,0).getDate(),pad=(first.getDay()+6)%7;
+  const sOf=dt=>shift(monday(dt),(dt.getDay()+6)%7);
+  let total=0,cells=['L','M','M','J','V','S','D'].map(x=>`<span class="wd">${x}</span>`).join('');
+  for(let i=0;i<pad;i++){const dt=addDays(first,i-pad);cells+=`<button type="button" class="day out" data-ecal="${k(dt)}"><span class="num">${dt.getDate()}</span></button>`;}
+  for(let d=1;d<=dim;d++){const dt=new Date(y,m,d),key=k(dt),sh=sOf(dt),lv=lvOn(key),av=F.dispos!==false&&AV[(dt.getDay()+6)%7];if(sh)total+=dur(sh.s,sh.e);
+    cells+=`<button type="button" class="day ${key===todayKey?'today':''} ${key===eCalSel?'sel':''} ${av&&av.off&&!sh?'unavail':''}" data-ecal="${key}" aria-label="${DAYS_LONG[(dt.getDay()+6)%7]} ${d}${sh?', '+sh.s+' à '+sh.e:''}"><span class="num">${d}</span>${sh?`<span class="pill ${pcls(sh.p)}">${sh.s}–${sh.e}</span>`:''}${lv?`<span class="tag p-leave">${esc(lv.type)}</span>`:''}</button>`;}
+  const sel=fromKey(eCalSel),ssh=sOf(sel),slv=lvOn(eCalSel),mySwap=(eView.swaps||[]).find(x=>x.emp===eView.employee.id&&x.date===eCalSel&&(x.status==='ouvert'||x.status==='proposé'));
+  const canSwap=F.echanges!==false&&ssh&&eCalSel>=todayKey;
+  $('e-plan').innerHTML=`<div class="mcal-head"><h2 class="hi">${ic('calendar')}Mon planning</h2><button type="button" class="btn sm" data-eact="ics">Ajouter à mon agenda</button></div>
+    <div class="mcal-head"><div class="mcal-nav"><button type="button" class="icon-btn" data-ecalnav="-1" aria-label="Mois précédent">‹</button><strong>${fmtMY.format(first)}</strong><button type="button" class="icon-btn" data-ecalnav="1" aria-label="Mois suivant">›</button></div><span class="muted small">${fh(total)} prévues ce mois-ci</span></div>
+    <div class="mcal">${cells}</div>
+    <div class="day-detail"><strong>${DAYS_LONG[(sel.getDay()+6)%7]} ${fmtDM.format(sel)}</strong>
+      <span>${ssh?`<span class="chip ${pcls(ssh.p)}">${esc(ssh.p)}</span> de <strong>${ssh.s}</strong> à <strong>${ssh.e}</strong> · ${fh(dur(ssh.s,ssh.e))}`:slv?`<span class="chip p-leave">${esc(slv.type)}</span>`:'<span class="muted">Repos</span>'}</span>
+      ${mySwap?`<span class="muted small">Demande de remplacement ${mySwap.status==='proposé'?'acceptée par '+esc(mySwap.vname||'un collègue')+', en attente de validation':'envoyée, en attente d\'un collègue'}.</span>`:canSwap?`<div class="row"><input type="text" id="e-swapnote" maxlength="120" placeholder="Raison (facultatif)" aria-label="Raison"><button type="button" class="btn" data-eact="swapreq" data-date="${eCalSel}">${ic('swap')}Chercher un remplaçant</button></div>`:''}
+    </div>`;
+}
 function exportIcs(){
   const e=eView.employee||{},eid=e.id,stamp=new Date().toISOString().replace(/[-:]/g,'').slice(0,15)+'Z',pad=n=>String(n).padStart(2,'0');
-  const ev=[];[thisMonday,addDays(thisMonday,7)].forEach(ws=>{for(let d=0;d<7;d++){const x=((eView.weeks[k(ws)]||{})[eid]||{})[d];if(!x)continue;
+  const ev=[];Object.keys(eView.weeks||{}).filter(wk=>wk>=k(thisMonday)).sort().map(fromKey).forEach(ws=>{for(let d=0;d<7;d++){const x=((eView.weeks[k(ws)]||{})[eid]||{})[d];if(!x)continue;
     const day=addDays(ws,d),[sh,sm]=x.s.split(':').map(Number),[eh,em]=x.e.split(':').map(Number),end=mins(x.e)<=mins(x.s)?addDays(day,1):day;
     const f=(dt,h,m)=>`${dt.getFullYear()}${pad(dt.getMonth()+1)}${pad(dt.getDate())}T${pad(h)}${pad(m)}00`;
     ev.push(['BEGIN:VEVENT',`UID:${eid}-${k(day)}@monkiosk`,`DTSTAMP:${stamp}`,`DTSTART:${f(day,sh,sm)}`,`DTEND:${f(end,eh,em)}`,`SUMMARY:${(x.p||'Travail').replace(/[,;]/g,' ')} · ${(eView.shop||'MonKiosk').replace(/[,;]/g,' ')}`,'END:VEVENT'].join('\r\n'));}});
@@ -1630,6 +1719,9 @@ document.addEventListener('click',async e2=>{
   if(a==='report'){const text=$('e-rtext').value.trim();if(text.length<2){toast('Décris le problème en quelques mots');b.disabled=false;return;}
     if(await empAction('report',{kind:$('e-rkind').value,text})){$('e-rtext').value='';toast('Signalement envoyé à ton responsable');}b.disabled=false;return;}
   if(a==='ics'){exportIcs();b.disabled=false;return;}
+  if(a==='swapreq'){if(await empAction('swap_request',{date:b.dataset.date,note:($('e-swapnote')||{}).value||''}))toast('Demande envoyée à tes collègues');return;}
+  if(a==='swapvol'){if(await empAction('swap_volunteer',{id:b.dataset.id}))toast('Proposition envoyée. Ton responsable va valider.');return;}
+  if(a==='swapcancel'){if(!armed(b,'Confirmer')){b.disabled=false;return;}if(await empAction('swap_cancel',{id:b.dataset.id}))toast('Échange annulé');return;}
   else if(a==='temp'){const v=parseFloat($('e-val').value);if(isNaN(v))toast('Indique la température relevée');else if(await empAction('temp',{equip:$('e-equip').value,val:v}))toast('Relevé enregistré');}
   else if(a==='leave'){const from=$('e-lfrom').value,to=$('e-lto').value;if(!from||!to||to<from)toast('La date de fin doit être après la date de début');
     else if(await empAction('leave',{type:$('e-ltype').value,from,to}))toast('Demande envoyée à ton responsable');}
@@ -1682,7 +1774,7 @@ function authStep(step){
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
   if(/Could not find the function|function .* does not exist|schema cache/i.test(m))return 'La base de données doit être mise à jour : lance le dernier fichier de migration dans Supabase.';
-  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème)/.test(m))return m+'.';
+  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème|Les échanges|Ce jour est déjà passé|Tu ne travailles pas|Une demande existe|Échange introuvable|Cet échange|Tu travailles déjà|Tu ne peux pas annuler)/.test(m))return m+'.';
   if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
   if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
   if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
@@ -1799,11 +1891,12 @@ function openAccount(){
   ${owner?`<label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
   <div class="two"><label>Charges patronales (%)<input type="number" id="f-charges" min="0" max="100" step="1" value="${st.charges}"></label><label>Objectif mensuel (€)<input type="number" id="f-goal" min="0" step="100" value="${st.goal||''}" placeholder="Ex. 25000"></label></div>
   <div class="two"><label>Rappel des relevés à partir de<select id="f-hour">${hours}</select></label><label>Notifications<span style="display:flex;gap:8px;align-items:center;min-height:42px;color:var(--ink);font-weight:500"><input type="checkbox" id="f-notify" ${st.notify?'checked':''}> Activer les rappels</span></label></div>`:''}
+  ${mode==='employee'?`<label>Mon téléphone (visible par ton responsable)<input type="tel" id="f-phone" value="${esc((eView&&eView.employee&&eView.employee.phone)||'')}" placeholder="Ex. 06 12 34 56 78"></label>`:''}
   ${owner||isAdmin?`<div class="row">${owner?'<button type="button" class="btn sm primary" data-modules>Options du commerce</button>':''}${isAdmin?'<button type="button" class="btn sm" data-admin>Administration MonKiosk</button>':''}</div>`:''}
   <h3>Mes commerces</h3><ul class="list">${cos}</ul>
   <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
   ${desktopBlock()}
-  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button>${owner?'<button type="submit" class="btn primary">Enregistrer</button>':''}</div>`,{type:'account'},owner?'f-shop':null);
+  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button>${owner||mode==='employee'?'<button type="submit" class="btn primary">Enregistrer</button>':''}</div>`,{type:'account'},owner?'f-shop':null);
 }
 $('account').onclick=openAccount;
 $('nav-account').onclick=()=>mode==='demo'?location.reload():openAccount();
