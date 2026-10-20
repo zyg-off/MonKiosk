@@ -229,6 +229,74 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
 .switch .grow{flex:1;min-width:0}
 .switch strong{display:block}
 .bigcode{font-family:var(--f-display);font-weight:800;font-size:clamp(3.5rem,18vw,6rem);letter-spacing:.15em;text-align:center;line-height:1;padding:12px 0;font-variant-numeric:tabular-nums}
+/* icônes */
+.ic{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+h2.hi,h3.hi{display:flex;align-items:center;gap:9px}
+h2.hi .ic{width:20px;height:20px;color:var(--accent)}
+h3.hi .ic{width:16px;height:16px}
+.btn .ic{width:16px;height:16px;margin:-2px 6px -2px -2px;vertical-align:-3px}
+/* accueil */
+.home-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;grid-auto-flow:row dense;align-items:stretch}
+.home-grid>.card{height:100%}
+.home-grid .span2{grid-column:span 2}
+@media (max-width:1100px){.home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.home-grid{grid-template-columns:minmax(0,1fr)}.home-grid .span2{grid-column:auto}}
+.kpi .soft{font-size:1rem;color:var(--muted);font-weight:600}
+/* barres de défilement */
+:root{--scroll:#c3cbd8;--scroll-hover:#8f9bb0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--scroll:#323c4b;--scroll-hover:#4b5870}}
+:root[data-theme="dark"]{--scroll:#323c4b;--scroll-hover:#4b5870}
+*{scrollbar-width:thin;scrollbar-color:var(--scroll) transparent}
+::-webkit-scrollbar{width:11px;height:11px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background-color:var(--scroll);border-radius:99px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:var(--scroll-hover)}
+::-webkit-scrollbar-corner{background:transparent}
+/* champs date : calendrier MonKiosk */
+input[type=date],input[type=month]{cursor:pointer;padding-right:40px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%237c8698' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='16' rx='2'/%3E%3Cpath d='M3 10h18M8 3v4M16 3v4'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-calendar-picker-indicator{display:none}
+.cal{position:fixed;z-index:60;width:300px;max-width:calc(100vw - 16px);background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px;box-shadow:0 18px 40px -16px rgba(15,25,45,.45);display:flex;flex-direction:column;gap:8px}
+.cal-head{display:flex;align-items:center;justify-content:space-between}
+.cal-head strong{font-family:var(--f-display);font-size:1rem;text-transform:capitalize}
+.cal-head button,.cal-foot button{border:0;background:none;border-radius:10px;height:34px;min-width:34px;font-size:1.1rem;color:var(--ink)}
+.cal-head button:hover,.cal-foot button:hover{background:var(--soft)}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal-grid .wd{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;padding:4px 0}
+.cal-grid button{border:0;background:none;height:36px;border-radius:10px;font-variant-numeric:tabular-nums;color:var(--ink);font-size:.9rem}
+.cal-grid button:hover{background:var(--soft)}
+.cal-grid button.today{box-shadow:inset 0 0 0 1.5px var(--accent);color:var(--accent);font-weight:700}
+.cal-grid button.sel{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.cal-grid.months{grid-template-columns:repeat(3,1fr)}
+.cal-grid.months button{height:42px;text-transform:capitalize}
+.cal-foot{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px}
+.cal-foot button{font-size:.85rem;font-weight:600;color:var(--accent);padding:0 10px}
+/* compte en bas de la barre */
+.nav-foot{display:flex}
+.nav-account{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--muted);border-radius:18px;padding:7px 10px;flex-direction:column;gap:3px;font-size:.68rem;font-weight:600;min-width:56px}
+.nav-account:hover{background:var(--soft);color:var(--ink)}
+.avatar{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex:none;font-family:var(--f-display)}
+.nav-account .who{display:none;flex-direction:column;min-width:0}
+.nav-account .who strong{font-weight:600}
+.nav-account .who small{display:none}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;flex:none}
+.sync-dot.saving,.sync-dot.info{background:var(--accent)}.sync-dot.warn{background:var(--warn)}.sync-dot.crit{background:var(--crit)}
+@media (min-width:960px){
+  .nav ul{flex:1}
+  .nav-foot{border-top:1px solid var(--line);padding-top:12px}
+  .nav-account{flex-direction:row;width:100%;padding:10px;border-radius:12px;font-size:.9rem;gap:10px;text-align:left}
+  .avatar{width:34px;height:34px;font-size:.95rem}
+  .nav-account .who{display:flex;align-items:flex-start}
+  .nav-account .lbl-m{display:none}
+  .nav-account .who strong{color:var(--ink);font-size:.88rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+  .nav-account .who small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:.75rem;font-weight:600}
+}
+/* stock : catégories */
+.filters{display:flex;flex-wrap:wrap;gap:6px}
+.filters button{border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.group-title{display:flex;align-items:center;gap:8px;margin:14px 0 2px;font-size:.78rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.group-title:first-child{margin-top:0}
+.group-title .count{font-weight:600;letter-spacing:0;text-transform:none}
 /* print */
 #print-area{display:none}
 @media print{
@@ -313,7 +381,7 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
 <div class="app" id="appmain" hidden>
   <header class="top">
     <div class="brand"><small id="shopname">MonKiosk</small><h1 id="viewtitle">Accueil</h1></div>
-    <div class="tools"><span class="chip ok" id="sync">Synchronisé</span><button type="button" class="btn sm" id="account">Compte</button></div>
+    <div class="tools"><span class="chip ok" id="sync" hidden>Synchronisé</span><button type="button" class="btn sm" id="account" hidden>Compte</button></div>
   </header>
   <div class="example" id="example">
     <span>Mode démo : la boulangerie fictive « Au Pain Doré ». Rien n'est enregistré.</span>
@@ -327,19 +395,19 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
       <p class="muted small" style="margin:0">Ton commerce est vide pour l'instant. Trois étapes pour bien démarrer :</p>
       <ol><li><button type="button" class="linkbtn" id="w-team">Ajoute tes salariés</button></li><li><button type="button" class="linkbtn" data-go="planning">Remplis le planning de la semaine</button></li><li><button type="button" class="linkbtn" data-go="stock">Ajoute tes articles en stock</button></li></ol>
     </div>
-    <div class="card"><div class="card-head"><h2 id="today-label"></h2><span class="chip info" id="today-count"></span></div>
+    <div class="card"><div class="card-head"><h2 class="hi" data-icon="sun"><span id="today-label"></span></h2><span class="chip info" id="today-count"></span></div>
       <ul class="alerts" id="home-alerts"></ul></div>
-    <div class="grid">
-      <div class="card"><h3>En boutique aujourd'hui</h3><ul class="list" id="home-team"></ul></div>
-      <div class="card"><h3>Ventes</h3><div class="kpis" id="home-sales"></div></div>
-      <div class="card"><h3>Checklists du jour</h3><div id="home-tasks"></div></div>
-      <div class="card"><h3>Dernière annonce</h3><div id="home-note"></div></div>
-    </div>
-    <div class="card">
-      <h3>Sauvegarde</h3>
-      <p class="muted small" style="margin:0">Tes données sont enregistrées en ligne. Tu peux aussi en télécharger une copie de sauvegarde, ou restaurer une copie.</p>
-      <div class="row"><button type="button" class="btn" id="export">Exporter mes données</button><label class="btn" for="import" style="cursor:pointer">Importer une sauvegarde</label><input type="file" id="import" accept="application/json,.json" hidden></div>
-      <p class="muted small" id="export-note" style="margin:0" hidden>L'export fonctionne dans l'application installée.</p>
+    <div class="home-grid">
+      <div class="card"><h3 class="hi" data-icon="store">En boutique aujourd'hui</h3><ul class="list" id="home-team"></ul></div>
+      <div class="card"><h3 class="hi" data-icon="euro">Ventes</h3><div class="kpis" id="home-sales"></div></div>
+      <div class="card"><h3 class="hi" data-icon="check">Checklists du jour</h3><div id="home-tasks"></div></div>
+      <div class="card span2"><h3 class="hi" data-icon="megaphone">Dernière annonce</h3><div id="home-note"></div></div>
+      <div class="card">
+        <h3 class="hi" data-icon="save">Sauvegarde</h3>
+        <p class="muted small" style="margin:0">Tes données sont enregistrées en ligne. Tu peux aussi en télécharger une copie, ou en restaurer une.</p>
+        <div class="row"><button type="button" class="btn sm" id="export">Exporter</button><label class="btn sm" for="import" style="cursor:pointer">Importer</label><input type="file" id="import" accept="application/json,.json" hidden></div>
+        <p class="muted small" id="export-note" style="margin:0" hidden>L'export fonctionne dans l'application installée.</p>
+      </div>
     </div>
   </section>
 
@@ -364,7 +432,7 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
       <button type="button" class="btn" id="print-plan">Imprimer</button>
     </div>
     <div class="card">
-      <h2>Envoyer le planning</h2>
+      <h2 class="hi" data-icon="send">Envoyer le planning</h2>
       <p class="muted small" style="margin:0">Choisis un salarié, copie son message et colle-le dans WhatsApp ou par SMS.</p>
       <div class="row"><select id="share-emp" aria-label="Salarié"></select><button type="button" class="btn primary" id="copy-share">Copier le message</button></div>
       <pre class="msg" id="share-text"></pre>
@@ -373,16 +441,16 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
 
   <!-- EQUIPE -->
   <section class="view" id="v-equipe" hidden>
-    <div class="card"><div class="card-head"><h2>Pointage du jour</h2><span class="muted small" id="punch-date"></span></div>
+    <div class="card"><div class="card-head"><h2 class="hi" data-icon="clock">Pointage du jour</h2><span class="muted small" id="punch-date"></span></div>
       <div class="note" style="align-items:center;flex-wrap:wrap"><p><time>Code du jour à afficher en boutique</time>Les salariés le saisissent pour badger : ils prouvent ainsi qu'ils sont sur place.</p><span class="big" id="punch-code" style="letter-spacing:.2em">—</span><button type="button" class="btn sm" id="punch-code-big">Afficher en grand</button></div>
       <ul class="list" id="punches"></ul></div>
     <div class="grid">
       <div class="card">
-        <div class="card-head"><h2>Congés et absences</h2><button type="button" class="btn sm primary" id="add-leave">+ Demande</button></div>
+        <div class="card-head"><h2 class="hi" data-icon="umbrella">Congés et absences</h2><button type="button" class="btn sm primary" id="add-leave">+ Demande</button></div>
         <ul class="list" id="leaves"></ul>
       </div>
       <div class="card">
-        <h2>Annonces à l'équipe</h2>
+        <h2 class="hi" data-icon="megaphone">Annonces à l'équipe</h2>
         <textarea id="n-text" placeholder="Ex. Livraison de farine décalée à jeudi 7 h"></textarea>
         <div class="row"><button type="button" class="btn primary" id="n-add">Publier l'annonce</button></div>
         <div id="notes" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -390,17 +458,17 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
     </div>
     <div class="grid">
       <div class="card">
-        <div class="card-head"><h2>Salariés</h2><button type="button" class="btn sm" id="add-emp2">+ Ajouter</button></div>
+        <div class="card-head"><h2 class="hi" data-icon="users">Salariés</h2><button type="button" class="btn sm" id="add-emp2">+ Ajouter</button></div>
         <ul class="list" id="staff"></ul>
       </div>
       <div class="card">
-        <div class="card-head"><h2>Postes</h2><button type="button" class="btn sm" id="add-poste">+ Poste</button></div>
+        <div class="card-head"><h2 class="hi" data-icon="tag">Postes</h2><button type="button" class="btn sm" id="add-poste">+ Poste</button></div>
         <p class="muted small" style="margin:0">Les postes de ton commerce et leur couleur dans le planning.</p>
         <ul class="list" id="postes"></ul>
       </div>
     </div>
     <div class="card" id="accounts-card" hidden>
-      <div class="card-head"><h2>Comptes salariés</h2></div>
+      <div class="card-head"><h2 class="hi" data-icon="key">Comptes salariés</h2></div>
       <p class="muted small" style="margin:0;max-width:62ch">Donne ce code à tes salariés. Ils créent leur compte, saisissent le code et choisissent leur nom. Ils voient leur planning, badgent, cochent les tâches et demandent leurs congés, sans accès au reste.</p>
       <div class="row"><span class="big" id="join-code" style="letter-spacing:.15em">—</span><button type="button" class="btn sm" id="copy-code">Copier</button><button type="button" class="btn sm" id="regen-code">Nouveau code</button></div>
       <ul class="list" id="members"></ul>
@@ -409,9 +477,10 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
 
   <!-- TACHES -->
   <section class="view" id="v-taches" hidden>
+    <div class="actions" id="list-actions"><button type="button" class="btn primary" id="add-list">+ Nouvelle liste</button></div>
     <div class="grid" id="checklists"></div>
     <div class="card">
-      <div class="card-head"><h2>Relevés de température</h2><span class="muted small">Hygiène (HACCP)</span></div>
+      <div class="card-head"><h2 class="hi" data-icon="thermo">Relevés de température</h2><button type="button" class="btn sm" id="equip-btn">Gérer les équipements</button></div>
       <div class="row">
         <select id="t-equip" aria-label="Équipement"></select>
         <input type="number" id="t-val" step="0.1" placeholder="°C" aria-label="Température en °C" style="max-width:110px">
@@ -425,11 +494,12 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
   <!-- STOCK -->
   <section class="view" id="v-stock" hidden>
     <div class="card">
-      <div class="card-head"><h2>Inventaire</h2><button type="button" class="btn sm primary" id="add-stock">+ Article</button></div>
-      <ul class="list" id="stock"></ul>
+      <div class="card-head"><h2 class="hi" data-icon="box">Inventaire</h2><button type="button" class="btn sm primary" id="add-stock">+ Article</button></div>
+      <div class="filters" id="stock-filter"></div>
+      <div id="stock"></div>
     </div>
     <div class="card">
-      <h2>Commande à passer</h2>
+      <h2 class="hi" data-icon="truck">Commande à passer</h2>
       <p class="muted small" style="margin:0">Les articles sous leur seuil, regroupés par fournisseur. Quantité proposée pour remonter au double du seuil.</p>
       <pre class="msg" id="order-text"></pre>
       <div class="row"><button type="button" class="btn primary" id="copy-order">Copier la commande</button></div>
@@ -439,7 +509,7 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
   <!-- VENTES -->
   <section class="view" id="v-ventes" hidden>
     <div class="card">
-      <h2>Saisir une journée</h2>
+      <h2 class="hi" data-icon="euro">Saisir une journée</h2>
       <div class="row">
         <input type="date" id="s-date" aria-label="Date">
         <input type="number" id="s-ca" min="0" step="0.01" placeholder="Chiffre d'affaires (€)" aria-label="Chiffre d'affaires en euros">
@@ -449,15 +519,15 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
     </div>
     <div class="card"><div class="kpis" id="sales-kpis"></div></div>
     <div class="card">
-      <div class="card-head"><h2>14 derniers jours</h2><span class="muted small">Pointillés : moyenne</span></div>
+      <div class="card-head"><h2 class="hi" data-icon="chart">14 derniers jours</h2><span class="muted small">Pointillés : moyenne</span></div>
       <div id="sales-chart"></div>
     </div>
     <div class="card">
-      <div class="card-head"><h2>Par mois</h2><span class="muted small">12 derniers mois</span></div>
+      <div class="card-head"><h2 class="hi" data-icon="target">Par mois</h2><span class="muted small">12 derniers mois</span></div>
       <div id="month-box" style="display:flex;flex-direction:column;gap:14px"></div>
     </div>
     <div class="card" id="loss-card">
-      <div class="card-head"><h2>Pertes et invendus</h2><div class="row" style="gap:8px"><input type="date" id="l-date" aria-label="Date"><button type="button" class="btn sm" id="prod-btn">Gérer les produits</button></div></div>
+      <div class="card-head"><h2 class="hi" data-icon="trash">Pertes et invendus</h2><div class="row" style="gap:8px"><input type="date" id="l-date" aria-label="Date"><button type="button" class="btn sm" id="prod-btn">Gérer les produits</button></div></div>
       <div style="overflow-x:auto"><table class="loss-table" id="loss-table"></table></div>
       <div class="kpis" id="loss-kpis"></div>
     </div>
@@ -467,14 +537,19 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
   <section class="view" id="v-employee" hidden>
     <div class="card" id="e-today"></div>
     <div class="grid">
-      <div class="card" id="e-plan"></div>
-      <div class="card"><h2>Tâches du jour</h2><div id="e-tasks"></div></div>
+      <div class="card"><h2 class="hi" data-icon="clock">Mes heures</h2><div id="e-hours"></div></div>
+      <div class="card"><h2 class="hi" data-icon="store">Avec toi aujourd'hui</h2><ul class="list" id="e-team"></ul></div>
     </div>
     <div class="grid">
-      <div class="card"><h2>Mes congés</h2><div id="e-leaves"></div></div>
-      <div class="card"><h2>Annonces</h2><div id="e-notes" style="display:flex;flex-direction:column;gap:8px"></div></div>
+      <div class="card" id="e-plan"></div>
+      <div class="card"><h2 class="hi" data-icon="check">Tâches du jour</h2><div id="e-tasks"></div></div>
     </div>
-    <div class="card" id="e-loss-card"><h2>Pertes et invendus du jour</h2><p class="muted small" style="margin:0">Saisis les quantités : la valeur se calcule toute seule.</p><div style="overflow-x:auto"><table class="loss-table" id="e-losses"></table></div></div>
+    <div class="grid">
+      <div class="card"><h2 class="hi" data-icon="umbrella">Mes congés</h2><div id="e-leaves"></div></div>
+      <div class="card"><h2 class="hi" data-icon="megaphone">Annonces</h2><div id="e-notes" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    </div>
+    <div class="card" id="e-stock-card"><h2 class="hi" data-icon="box">Stock</h2><p class="muted small" style="margin:0">Mets à jour les quantités quand tu ranges une livraison ou que tu utilises un produit.</p><div id="e-stock"></div></div>
+    <div class="card" id="e-loss-card"><h2 class="hi" data-icon="trash">Pertes et invendus du jour</h2><p class="muted small" style="margin:0">Saisis les quantités : la valeur se calcule toute seule.</p><div style="overflow-x:auto"><table class="loss-table" id="e-losses"></table></div></div>
   </section>
 </div>
 
@@ -488,7 +563,9 @@ body.desktop-app .auth{min-height:calc(100vh - 36px)}
     <li><button type="button" data-view="stock"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg><span class="lbl">Stock</span><span class="badge" id="b-stock" hidden></span></button></li>
     <li><button type="button" data-view="ventes"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span class="lbl">Ventes</span></button></li>
   </ul>
+  <div class="nav-foot"><button type="button" class="nav-account" id="nav-account"><span class="avatar" id="nav-avatar">?</span><span class="lbl lbl-m">Compte</span><span class="who"><strong id="nav-user">Compte</strong><small><span class="sync-dot" id="nav-sync-dot"></span><span id="nav-sync">Synchronisé</span></small></span></button></div>
 </nav>
+<div class="cal" id="cal" hidden></div>
 
 <div id="print-area"></div>
 <div class="overlay" id="overlay" hidden><form class="sheet" id="sheet" novalidate></form></div>
@@ -507,6 +584,31 @@ const LEAVE_TYPES=['Congés payés','Maladie','Formation','Absence'];
 const VIEWS={accueil:'Accueil',planning:'Planning',equipe:'Équipe',taches:'Tâches et hygiène',stock:'Stock',ventes:'Ventes'};
 const KEY='monkiosk-v1';
 const $=id=>document.getElementById(id);
+const ICONS={
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  store:'<path d="M3 9l1.5-5h15L21 9"/><path d="M4 9v11h16V9"/><path d="M3 9h18"/><path d="M9 20v-6h6v6"/>',
+  euro:'<path d="M17 6.5A7 7 0 1 0 17 17.5"/><path d="M4 10h9M4 14h9"/>',
+  check:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/>',
+  megaphone:'<path d="M3 10v4h4l6 4V6L7 10z"/><path d="M17 8a5 5 0 0 1 0 8"/>',
+  save:'<path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
+  send:'<path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/>',
+  umbrella:'<path d="M12 3a9 9 0 0 1 9 9H3a9 9 0 0 1 9-9z"/><path d="M12 12v7a2 2 0 0 0 4 0"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.8.7 3 2.4 3.5 5.2"/>',
+  tag:'<path d="M3 12V4h8l10 10-8 8z"/><circle cx="7.5" cy="8.5" r="1.5"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M14 9l2 2"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  thermo:'<path d="M10 4a2 2 0 0 1 4 0v10a4 4 0 1 1-4 0z"/><path d="M12 9v7"/>',
+  box:'<path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/>',
+  truck:'<path d="M3 6h11v10H3zM14 9h4l3 3v4h-7"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/>',
+  chart:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  pencil:'<path d="M4 20h4L19 9l-4-4L4 16z"/>',
+  folder:'<path d="M3 6h6l2 2h10v11H3z"/>'
+};
+function ic(n){return `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]||''}</svg>`;}
+document.querySelectorAll('[data-icon]').forEach(h=>h.insertAdjacentHTML('afterbegin',ic(h.dataset.icon)));
 
 function day0(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function monday(d){const x=day0(d);x.setDate(x.getDate()-((x.getDay()+6)%7));return x;}
@@ -574,12 +676,12 @@ function seed(){
       {id:uid(),at:mk(-1,6,7),equip:'Vitrine pâtisserie',val:3.6}
     ],
     stock:[
-      {id:uid(),name:'Farine T65',unit:'sacs de 25 kg',qty:6,min:10,supplier:'Minoterie Dupuy'},
-      {id:uid(),name:'Beurre AOP',unit:'kg',qty:18,min:15,supplier:'Laiterie du Lauragais'},
-      {id:uid(),name:'Levure fraîche',unit:'kg',qty:1.5,min:2,supplier:'Minoterie Dupuy'},
-      {id:uid(),name:'Sucre',unit:'kg',qty:40,min:20,supplier:'Metro'},
-      {id:uid(),name:'Œufs',unit:'plateaux de 30',qty:4,min:6,supplier:'Ferme Bessières'},
-      {id:uid(),name:'Sacs kraft',unit:'paquets',qty:12,min:5,supplier:'Metro'}
+      {id:uid(),name:'Farine T65',unit:'sacs de 25 kg',qty:6,min:10,supplier:'Minoterie Dupuy',cat:'Matières premières'},
+      {id:uid(),name:'Beurre AOP',unit:'kg',qty:18,min:15,supplier:'Laiterie du Lauragais',cat:'Produits frais'},
+      {id:uid(),name:'Levure fraîche',unit:'kg',qty:1.5,min:2,supplier:'Minoterie Dupuy',cat:'Produits frais'},
+      {id:uid(),name:'Sucre',unit:'kg',qty:40,min:20,supplier:'Metro',cat:'Matières premières'},
+      {id:uid(),name:'Œufs',unit:'plateaux de 30',qty:4,min:6,supplier:'Ferme Bessières',cat:'Produits frais'},
+      {id:uid(),name:'Sacs kraft',unit:'paquets',qty:12,min:5,supplier:'Metro',cat:'Emballages'}
     ],
     sales,
     settings:{charges:42,goal:26000,tempHour:10,notify:false},
@@ -622,7 +724,7 @@ const CFG=window.MONKIOSK_CONFIG||{};
 let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,punchCode='',isAdmin=false,pendingPunch=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false,editSeq=0,base=null,eView=null,memberships=[],members=[],joinCode='';
 const cacheKey=()=>'monkiosk-cache-'+(company?company.id:'x');
 function readCache(){try{const r=localStorage.getItem(cacheKey());return r?JSON.parse(r):null;}catch(e){return null;}}
-function setSync(st){const m={ok:['Synchronisé','ok'],saving:['Enregistrement…','info'],error:['Non synchronisé','crit'],offline:['Hors ligne','warn'],demo:['Démo','warn']}[st];const el=$('sync');el.textContent=m[0];el.className='chip '+m[1];}
+function setSync(st){const m={ok:['Synchronisé','ok'],saving:['Enregistrement…','info'],error:['Non synchronisé','crit'],offline:['Hors ligne','warn'],demo:['Démo','warn']}[st];const el=$('sync');el.textContent=m[0];el.className='chip '+m[1];const t=$('nav-sync');if(t){t.textContent=m[0];$('nav-sync-dot').className='sync-dot '+m[1];}}
 function save(){
   if(mode!=='cloud')return;
   try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
@@ -722,6 +824,7 @@ const MODULES=[
   {key:'stock',name:'Stock',desc:'Inventaire et liste de commande par fournisseur.'},
   {key:'ventes',name:'Ventes',desc:"Chiffre d'affaires, panier moyen, graphique sur 14 jours."},
   {key:'pertes',name:'Pertes et invendus',desc:'Produits créés par le responsable, quantités saisies par l\'équipe.'},
+  {key:'stock_staff',name:"Stock pour l'équipe",desc:"Les salariés peuvent mettre à jour les quantités depuis leur espace."},
   {key:'semaines',name:'Semaines types',desc:'Modèles de planning réutilisables.'},
   {key:'rappels',name:'Rappels',desc:'Alertes si les relevés et les checklists ne sont pas faits.'},
   {key:'espace',name:'Espace salarié',desc:'Comptes pour les salariés : planning, congés, tâches, pertes.',premium:true},
@@ -737,7 +840,7 @@ function applyGates(){
   const card=id=>$(id)&&$(id).closest('.card');
   gate(card('leaves'),feat('conges'));
   gate(card('notes'),feat('annonces'));gate(card('home-note'),feat('annonces'));
-  gate($('checklists'),feat('taches'));gate(card('home-tasks'),feat('taches'));
+  gate($('checklists'),feat('taches'));gate($('list-actions'),feat('taches'));gate(card('home-tasks'),feat('taches'));
   gate(card('temps'),feat('hygiene'));gate($('register-btn'),feat('registre'));
   ['s-date','sales-kpis','sales-chart','home-sales'].forEach(id=>gate(card(id),feat('ventes')));
   gate(card('month-box'),feat('stats')&&feat('ventes'));
@@ -775,8 +878,9 @@ function renderHome(){
   $('home-team').innerHTML=(team.map(o=>`<li><span class="chip ${pcls(o.x.p)}">${esc(o.x.p)}</span><span class="grow"><strong>${esc(o.e.name)}</strong></span><span class="qty small">${o.x.s}–${o.x.e}</span></li>`).join('')+off.map(e=>`<li><span class="chip p-leave">Absent</span><span class="grow"><strong>${esc(e.name)}</strong></span></li>`).join(''))||'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
   const y=state.sales[k(addDays(today,-1))],a=weekSales(1),b=weekSales(8);
   const delta=b.ca?Math.round((a.ca-b.ca)/b.ca*100):0;
-  $('home-sales').innerHTML=`<div class="kpi"><span class="muted small">Hier</span><span class="big">${y?eur.format(y.ca):'—'}</span></div>
-    <div class="kpi"><span class="muted small">7 derniers jours</span><span class="big">${eur.format(a.ca)}</span>${b.ca?`<span class="delta ${delta>=0?'up':'down'}">${delta>=0?'+':''}${delta} % vs semaine d'avant</span>`:''}</div>`;
+  $('home-sales').innerHTML=`<div class="kpi"><span class="muted small">Hier</span>${y?`<span class="big">${eur.format(y.ca)}</span>`:'<span class="soft">Pas encore saisi</span>'}</div>
+    <div class="kpi"><span class="muted small">7 derniers jours</span>${a.ca?`<span class="big">${eur.format(a.ca)}</span>`:'<span class="soft">Aucune vente saisie</span>'}${b.ca?`<span class="delta ${delta>=0?'up':'down'}">${delta>=0?'+':''}${delta} % vs semaine d'avant</span>`:''}</div>
+    <button type="button" class="btn sm" data-go="ventes">Saisir les ventes</button>`;
   const dn=state.done[todayKey]||{};
   $('home-tasks').innerHTML=state.lists.map(l=>{const t=l.items.length,d=l.items.filter(i=>dn[i.id]).length,p=t?Math.round(d/t*100):0;
     return `<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px"><div class="card-head"><strong>${esc(l.name)}</strong><span class="muted small">${d} / ${t}</span></div><div class="bar"><span style="width:${p}%"></span></div></div>`;}).join('')+`<button type="button" class="btn sm" data-go="taches">Ouvrir les checklists</button>`;
@@ -846,21 +950,30 @@ function renderPostes(){
 function renderTasks(){
   const dn=state.done[todayKey]||{};
   $('checklists').innerHTML=state.lists.map(l=>{const d=l.items.filter(i=>dn[i.id]).length;
-    return `<div class="card"><div class="card-head"><h2>${esc(l.name)}</h2><span class="chip ${d===l.items.length&&d?'ok':'info'}">${d} / ${l.items.length}</span></div>
+    return `<div class="card"><div class="card-head"><h2 class="hi">${ic('list')}${esc(l.name)}</h2><span class="row" style="gap:6px"><span class="chip ${d===l.items.length&&d?'ok':'info'}">${d} / ${l.items.length}</span><button type="button" class="btn sm" data-editlist="${l.id}">${ic('pencil')}Modifier</button></span></div>
     <ul class="list">${l.items.map(i=>`<li><label class="check ${dn[i.id]?'done':''}"><input type="checkbox" data-task="${i.id}" ${dn[i.id]?'checked':''}><span>${esc(i.text)}</span></label><button type="button" class="x" data-deltask="${l.id}:${i.id}" aria-label="Retirer la tâche">×</button></li>`).join('')}</ul>
-    <div class="row"><input type="text" id="add-${l.id}" placeholder="Nouvelle tâche" aria-label="Nouvelle tâche ${esc(l.name)}"><button type="button" class="btn sm" data-addtask="${l.id}">Ajouter</button></div></div>`;}).join('');
+    <div class="row"><input type="text" id="add-${l.id}" placeholder="Nouvelle tâche" aria-label="Nouvelle tâche ${esc(l.name)}"><button type="button" class="btn sm" data-addtask="${l.id}">Ajouter</button></div></div>`;}).join('')||'<div class="card"><p class="empty-note">Aucune liste. Crée ta première liste avec « Nouvelle liste ».</p></div>';
   const sel=$('t-equip'),cur=sel.value;
   sel.innerHTML=state.equipments.map(e=>`<option>${esc(e.name)}</option>`).join('');if(cur)sel.value=cur;
   const T=[...state.temps].sort((a,b)=>b.at.localeCompare(a.at)).slice(0,10);
   $('temps').innerHTML=T.map(t=>{const d=new Date(t.at),ok=tempOk(t);const when=k(d)===todayKey?"Aujourd'hui":fmtShort.format(d);
     return `<li><span class="grow"><strong>${esc(t.equip)}</strong><span class="muted small">${when} à ${d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</span></span><span class="qty">${num(t.val)} °C</span><span class="chip ${ok?'ok':'crit'}">${ok?'Conforme':'Hors norme'}</span></li>`;}).join('')||'<li class="empty-note">Aucun relevé.</li>';
 }
+let stockFilter='';
+function stockCats(list){return [...new Set((list||state.stock).map(x=>(x.cat||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'fr'));}
+function stockGroups(list,filter){
+  const groups={};list.forEach(x=>{const c=(x.cat||'').trim()||'Sans catégorie';if(filter&&c!==filter)return;(groups[c]=groups[c]||[]).push(x);});
+  return Object.entries(groups).sort((a,b)=>a[0]==='Sans catégorie'?1:b[0]==='Sans catégorie'?-1:a[0].localeCompare(b[0],'fr'));
+}
 function renderStock(){
-  const S=[...state.stock].sort((a,b)=>((a.qty<a.min)?0:1)-((b.qty<b.min)?0:1)||a.name.localeCompare(b.name));
-  $('stock').innerHTML=S.map(s=>{const low=s.qty<s.min;
-    return `<li style="flex-wrap:wrap"><button type="button" class="emp" data-stock="${s.id}" style="flex:1;min-width:160px;width:auto"><strong>${esc(s.name)}</strong><small>${esc(s.unit)} · seuil ${num(s.min)} · ${esc(s.supplier)}</small></button>
+  const cats=stockCats();if(stockFilter&&!cats.includes(stockFilter)&&stockFilter!=='Sans catégorie')stockFilter='';
+  const hasNone=state.stock.some(x=>!(x.cat||'').trim());
+  $('stock-filter').innerHTML=cats.length?[['','Tout']].concat(cats.map(c=>[c,c])).concat(hasNone?[['Sans catégorie','Sans catégorie']]:[]).map(([v,l])=>`<button type="button" data-sfilter="${esc(v)}" aria-pressed="${stockFilter===v}">${esc(l)}</button>`).join(''):'';
+  const groups=stockGroups(state.stock,stockFilter);
+  $('stock').innerHTML=groups.map(([c,items])=>`${cats.length?`<div class="group-title">${ic('folder')}${esc(c)} <span class="count">· ${items.length}</span></div>`:''}<ul class="list">${items.sort((a,b)=>((a.qty<a.min)?0:1)-((b.qty<b.min)?0:1)||a.name.localeCompare(b.name,'fr')).map(x=>{const low=x.qty<x.min;
+    return `<li style="flex-wrap:wrap"><button type="button" class="emp" data-stock="${x.id}" style="flex:1;min-width:160px;width:auto"><strong>${esc(x.name)}</strong><small>${esc(x.unit)} · seuil ${num(x.min)} · ${esc(x.supplier)}</small></button>
     ${low?'<span class="chip crit">À commander</span>':'<span class="chip ok">OK</span>'}
-    <span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="icon-btn" data-delta="${s.id}:-1" aria-label="Retirer 1">−</button><span class="qty">${num(s.qty)}</span><button type="button" class="icon-btn" data-delta="${s.id}:1" aria-label="Ajouter 1">+</button></span></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier article.</li>';
+    <span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="icon-btn" data-delta="${x.id}:-1" aria-label="Retirer 1">−</button><span class="qty">${num(x.qty)}</span><button type="button" class="icon-btn" data-delta="${x.id}:1" aria-label="Ajouter 1">+</button></span></li>`;}).join('')}</ul>`).join('')||'<p class="empty-note">Ajoute ton premier article.</p>';
   const low=lowStock();
   if(!low.length){$('order-text').textContent='Rien à commander, tout est au-dessus des seuils.';return;}
   const by={};low.forEach(s=>{(by[s.supplier]=by[s.supplier]||[]).push(s);});
@@ -919,6 +1032,28 @@ function openPoste(i){
   <label>Couleur</label><div class="swatches" id="f-pcolors">${[...Array(COLORS).keys()].map(c=>`<button type="button" class="pc${c}" data-color="${c}" aria-label="Couleur ${c+1}" aria-pressed="${c===col}"></button>`).join('')}</div>
   ${actions(p&&postes().length>1?'Supprimer le poste':'')}`,{type:'poste',i,color:col},'f-pname');
 }
+function openList(id){
+  const l=id?state.lists.find(x=>x.id===id):null,i=l?state.lists.indexOf(l):state.lists.length;
+  const remind=l?(l.remind===true||(l.remind===undefined&&i===0)):false;
+  openSheet(`<h2>${l?'Modifier la liste':'Nouvelle liste'}</h2>
+  <label>Nom de la liste<input type="text" id="f-lname" value="${l?esc(l.name):''}" placeholder="Ex. Ouverture, Nettoyage du soir, Livraison"></label>
+  <label class="switch" style="border:0;padding:0"><input type="checkbox" id="f-lremind" ${remind?'checked':''}><span class="grow"><strong>Rappel</strong><span class="muted small">Alerter si la liste n'est pas terminée à l'heure du rappel.</span></span></label>
+  ${l?`<h3>Tâches</h3><ul class="list">${l.items.map((t,j)=>`<li><span class="grow">${esc(t.text)}</span><button type="button" class="icon-btn" data-lmove="${j}:-1" aria-label="Monter" ${j?'':'disabled'}>↑</button><button type="button" class="icon-btn" data-lmove="${j}:1" aria-label="Descendre" ${j<l.items.length-1?'':'disabled'}>↓</button></li>`).join('')||'<li class="empty-note">Ajoute des tâches depuis la carte de la liste.</li>'}</ul>`:''}
+  ${actions(l?'Supprimer la liste':'')}`,{type:'list',id},'f-lname');
+}
+function openEquipments(){
+  openSheet(`<h2>Équipements</h2><p class="muted small" style="margin:0">Les frigos, vitrines et congélateurs à relever, avec la plage de température autorisée.</p>
+  <ul class="list">${state.equipments.map((e,i)=>`<li><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">entre ${num(e.min)} et ${num(e.max)} °C</span></span><button type="button" class="btn sm" data-equip="${i}">Modifier</button></li>`).join('')||'<li class="empty-note">Aucun équipement.</li>'}</ul>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Fermer</button><button type="button" class="btn primary" data-equipnew>+ Ajouter un équipement</button></div>`,{type:'equipments'},null);
+}
+function openEquip(i){
+  const e=i==null||isNaN(i)?null:state.equipments[i];
+  openSheet(`<h2>${e?esc(e.name):'Nouvel équipement'}</h2>
+  <label>Nom<input type="text" id="f-ename" value="${e?esc(e.name):''}" placeholder="Ex. Frigo boissons"></label>
+  <div class="two"><label>Minimum (°C)<input type="number" id="f-emin" step="0.5" value="${e?e.min:0}"></label><label>Maximum (°C)<input type="number" id="f-emax" step="0.5" value="${e?e.max:4}"></label></div>
+  <div class="presets"><button type="button" data-epre="0:4">Froid positif 0 à 4 °C</button><button type="button" data-epre="0:8">Boissons 0 à 8 °C</button><button type="button" data-epre="-30:-18">Congélateur ≤ −18 °C</button></div>
+  ${actions(e?"Supprimer l'équipement":'')}`,{type:'equip',i:e?i:null},'f-ename');
+}
 function openLeave(){
   openSheet(`<h2>Nouvelle demande</h2>
   <div class="two"><label>Salarié<select id="f-lemp">${state.employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('')}</select></label>
@@ -932,10 +1067,16 @@ function openStock(id){
   <label>Article<input type="text" id="f-sname" value="${s?esc(s.name):''}" placeholder="Ex. Farine T80"></label>
   <label>Unité<input type="text" id="f-sunit" value="${s?esc(s.unit):''}" placeholder="Ex. sacs de 25 kg"></label>
   <div class="two"><label>Quantité<input type="number" id="f-sqty" step="0.5" min="0" value="${s?s.qty:0}"></label><label>Seuil d'alerte<input type="number" id="f-smin" step="0.5" min="0" value="${s?s.min:1}"></label></div>
-  <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
+  <div class="two"><label>Catégorie<input type="text" id="f-scat" list="f-scats" value="${s?esc(s.cat||''):esc(stockFilter&&stockFilter!=='Sans catégorie'?stockFilter:'')}" placeholder="Ex. Matières premières"><datalist id="f-scats">${stockCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label>
+  <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label></div>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
 }
 sheet.addEventListener('click',ev=>{
   const pe=ev.target.closest('[data-prod]');if(pe){openProduct(pe.dataset.prod);return;}
+  const eq=ev.target.closest('[data-equip]');if(eq){openEquip(+eq.dataset.equip);return;}
+  if(ev.target.closest('[data-equipnew]')){openEquip(null);return;}
+  const ep=ev.target.closest('[data-epre]');if(ep){const[a,b]=ep.dataset.epre.split(':');$('f-emin').value=a;$('f-emax').value=b;return;}
+  const lm=ev.target.closest('[data-lmove]');if(lm&&ctx.type==='list'){const l=state.lists.find(x=>x.id===ctx.id),[j,dl]=lm.dataset.lmove.split(':').map(Number),t=j+dl;
+    if(l&&t>=0&&t<l.items.length){[l.items[j],l.items[t]]=[l.items[t],l.items[j]];commit();openList(ctx.id);}return;}
   if(ev.target.closest('[data-prodnew]')){openProduct(null);return;}
   const ta=ev.target.closest('[data-tplapply]');
   if(ta){const t=state.templates.find(x=>x.id===ta.dataset.tplapply);if(t){const ids=new Set(state.employees.map(e=>e.id));const d={};Object.entries(clone(t.data)).forEach(([id,v])=>{if(ids.has(id))d[id]=v;});
@@ -952,6 +1093,8 @@ sheet.addEventListener('click',ev=>{
     if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];toast('Créneau retiré');}
     else if(ctx.type==='emp'){state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
     else if(ctx.type==='stock'){state.stock=state.stock.filter(s=>s.id!==ctx.id);toast('Article supprimé');}
+    else if(ctx.type==='list'){state.lists=state.lists.filter(x=>x.id!==ctx.id);toast('Liste supprimée');}
+    else if(ctx.type==='equip'){state.equipments.splice(ctx.i,1);toast('Équipement supprimé. Les relevés passés sont conservés.');commit();openEquipments();return;}
     else if(ctx.type==='product'){state.products=state.products.filter(p=>p.id!==ctx.id);toast('Produit supprimé. Les pertes déjà saisies sont conservées.');commit();openProducts();return;}
     else if(ctx.type==='poste'){if(!state.postes||!state.postes.length)state.postes=postes().map(x=>({...x}));state.postes.splice(ctx.i,1);toast('Poste supprimé. Les créneaux existants le gardent.');}
     commit();closeSheet();
@@ -963,6 +1106,15 @@ sheet.addEventListener('submit',ev=>{
     const data={name,price:Math.max(0,parseFloat($('f-prprice').value)||0),unit:$('f-prunit').value.trim()||'pièce'};
     if(ctx.id)Object.assign(state.products.find(p=>p.id===ctx.id),data);else state.products.push({id:uid(),...data});
     toast('Produit enregistré');commit();openProducts();return;}
+  if(ctx.type==='list'){const name=$('f-lname').value.trim();if(!name)return toast('Donne un nom à la liste');const remind=$('f-lremind').checked;
+    if(ctx.id)Object.assign(state.lists.find(x=>x.id===ctx.id),{name,remind});else state.lists.push({id:uid(),name,remind,items:[]});
+    toast(ctx.id?'Liste mise à jour':'Liste créée. Ajoute ses tâches.');commit();closeSheet();return;}
+  if(ctx.type==='equip'){const name=$('f-ename').value.trim();if(!name)return toast("Indique le nom de l'équipement");
+    let mn=parseFloat($('f-emin').value),mx=parseFloat($('f-emax').value);if(isNaN(mn)||isNaN(mx))return toast('Indique les températures minimum et maximum');if(mn>mx)[mn,mx]=[mx,mn];
+    if(state.equipments.some((e,j)=>j!==ctx.i&&e.name.toLowerCase()===name.toLowerCase()))return toast('Cet équipement existe déjà');
+    if(ctx.i==null)state.equipments.push({name,min:mn,max:mx});
+    else{const old=state.equipments[ctx.i].name;state.equipments[ctx.i]={name,min:mn,max:mx};if(old!==name)state.temps.forEach(t=>{if(t.equip===old)t.equip=name;});}
+    toast('Équipement enregistré');commit();openEquipments();return;}
   if(ctx.type==='import'){if(importData){state=normalize(importData,company?company.name:state.shop);importData=null;toast('Sauvegarde restaurée');commit();}closeSheet();return;}
   if(ctx.type==='register'){const m=$('f-month').value;closeSheet();if(m)setTimeout(()=>printRegister(m),80);return;}
   if(ctx.type==='tpl'){const name=$('f-tname').value.trim();if(!name)return toast('Donne un nom à cette semaine type');
@@ -1005,7 +1157,7 @@ sheet.addEventListener('submit',ev=>{
     toast('Réglages enregistrés');
   }else if(ctx.type==='stock'){
     const name=$('f-sname').value.trim();if(!name)return toast("Indique le nom de l'article");
-    const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur'};
+    const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur',cat:$('f-scat').value.trim()};
     if(ctx.id)Object.assign(state.stock.find(s=>s.id===ctx.id),data);else state.stock.push({id:uid(),...data});
     toast('Stock mis à jour');
   }
@@ -1029,6 +1181,9 @@ document.addEventListener('click',ev=>{
   if(t.classList.contains('cell'))return openShift(ds.e,+ds.d);
   if(ds.emp)return openEmp(ds.emp);
   if(ds.stock)return openStock(ds.stock);
+  if(ds.sfilter!=null){stockFilter=ds.sfilter;return renderStock();}
+  if(ds.editlist)return openList(ds.editlist);
+  if(ds.equip!=null)return openEquip(+ds.equip);
   if(ds.poste!=null)return openPoste(+ds.poste);
   if(ds.punch){const[e,kind]=ds.punch.split(':');state.punches.push({id:uid(),emp:e,kind,at:new Date().toISOString()});toast(kind==='in'?`Arrivée de ${empName(e)} enregistrée`:`Départ de ${empName(e)} enregistré`);return commit();}
   if(ds.unlink){if(!armed(t,'Confirmer'))return;removeMember(ds.unlink);return;}
@@ -1086,6 +1241,51 @@ $('import').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new Fi
 let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
 if(framed){$('export').hidden=true;$('export-note').hidden=false;}
 const h=(location.hash||'').slice(1);if(VIEWS[h])view=h;
+
+/* ---------- Calendrier MonKiosk (remplace celui du navigateur) ---------- */
+const cal=$('cal');let calInput=null,calView=null;
+const fmtMY=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'}),fmtM=new Intl.DateTimeFormat('fr-FR',{month:'short'});
+function prepDateInputs(root){(root||document).querySelectorAll('input[type=date],input[type=month]').forEach(i=>{if(!i.dataset.cal){i.dataset.cal='1';i.readOnly=true;}});}
+new MutationObserver(ms=>ms.forEach(m=>m.addedNodes.forEach(n=>{if(n.nodeType===1)prepDateInputs(n);}))).observe(document.body,{childList:true,subtree:true});
+prepDateInputs();
+function openCal(input){
+  calInput=input;const month=input.type==='month',v=input.value;
+  const d=v?fromKey(month?v+'-01':v):today;calView=new Date(d.getFullYear(),d.getMonth(),1);
+  renderCal();cal.hidden=false;placeCal();
+}
+function placeCal(){const r=calInput.getBoundingClientRect(),w=cal.offsetWidth,h=cal.offsetHeight;
+  let top=r.bottom+6;if(top+h>innerHeight-8)top=Math.max(8,r.top-h-6);
+  cal.style.top=top+'px';cal.style.left=Math.max(8,Math.min(r.left,innerWidth-w-8))+'px';}
+function closeCal(){cal.hidden=true;calInput=null;}
+function renderCal(){
+  const month=calInput.type==='month',v=calInput.value;
+  if(month){const y=calView.getFullYear();
+    cal.innerHTML=`<div class="cal-head"><button type="button" data-cnav="-12" aria-label="Année précédente">‹</button><strong>${y}</strong><button type="button" data-cnav="12" aria-label="Année suivante">›</button></div>
+    <div class="cal-grid months">${[...Array(12).keys()].map(m=>{const key=y+'-'+String(m+1).padStart(2,'0');return `<button type="button" data-cval="${key}" class="${key===v?'sel':''} ${key===todayKey.slice(0,7)?'today':''}">${fmtM.format(new Date(y,m,1)).replace('.','')}</button>`;}).join('')}</div>
+    <div class="cal-foot"><button type="button" data-cval="${todayKey.slice(0,7)}">Ce mois-ci</button><button type="button" data-cclose>Fermer</button></div>`;return;}
+  const first=calView,pad=(first.getDay()+6)%7,dim=new Date(first.getFullYear(),first.getMonth()+1,0).getDate();
+  let cells='';for(let i=0;i<pad;i++)cells+='<span></span>';
+  for(let d=1;d<=dim;d++){const key=k(new Date(first.getFullYear(),first.getMonth(),d));cells+=`<button type="button" data-cval="${key}" class="${key===v?'sel':''} ${key===todayKey?'today':''}">${d}</button>`;}
+  cal.innerHTML=`<div class="cal-head"><button type="button" data-cnav="-1" aria-label="Mois précédent">‹</button><strong>${fmtMY.format(first)}</strong><button type="button" data-cnav="1" aria-label="Mois suivant">›</button></div>
+  <div class="cal-grid">${['L','M','M','J','V','S','D'].map(x=>`<span class="wd">${x}</span>`).join('')}${cells}</div>
+  <div class="cal-foot"><button type="button" data-cval="${todayKey}">Aujourd'hui</button><button type="button" data-cclose>Fermer</button></div>`;
+}
+document.addEventListener('pointerdown',ev=>{
+  const i=ev.target.closest&&ev.target.closest('input[type=date],input[type=month]');
+  if(i){ev.preventDefault();i.focus({preventScroll:true});if(calInput===i&&!cal.hidden)closeCal();else openCal(i);return;}
+  if(!cal.hidden&&!cal.contains(ev.target))closeCal();
+},true);
+document.addEventListener('keydown',ev=>{
+  const i=ev.target;if(i&&i.matches&&i.matches('input[type=date],input[type=month]')&&(ev.key==='Enter'||ev.key===' '||ev.key==='ArrowDown')){ev.preventDefault();openCal(i);}
+  if(ev.key==='Escape'&&!cal.hidden){ev.stopImmediatePropagation();closeCal();}
+},true);
+cal.addEventListener('click',ev=>{
+  const n=ev.target.closest('[data-cnav]');if(n){calView=new Date(calView.getFullYear(),calView.getMonth()+Number(n.dataset.cnav),1);renderCal();placeCal();return;}
+  const c=ev.target.closest('[data-cval]');if(c&&calInput){const inp=calInput;inp.value=c.dataset.cval;closeCal();inp.dispatchEvent(new Event('input',{bubbles:true}));inp.dispatchEvent(new Event('change',{bubbles:true}));return;}
+  if(ev.target.closest('[data-cclose]'))closeCal();
+});
+addEventListener('resize',()=>{if(!cal.hidden)placeCal();});
+document.addEventListener('scroll',()=>{if(!cal.hidden)placeCal();},true);
 
 /* ---------- Temps, pointage et coûts ---------- */
 const hm=iso=>new Date(iso).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
@@ -1207,13 +1407,16 @@ function openProduct(id){
   ${actions(pr?'Supprimer le produit':'')}`,{type:'product',id},'f-prname');
 }
 $('prod-btn').onclick=openProducts;
+$('add-list').onclick=()=>openList(null);
+$('equip-btn').onclick=openEquipments;
 
 /* ---------- Rappels et notifications ---------- */
 function reminders(){
   const r=[];if(!state||mode==='employee'||!feat('rappels'))return r;const hr=new Date().getHours(),h0=state.settings.tempHour||10;
   if(feat('hygiene')&&hr>=h0&&state.equipments.length&&!todayTemps().length)r.push({key:'temp',lvl:'warn',tag:'Rappel',txt:"Les températures n'ont pas encore été relevées aujourd'hui.",go:'taches'});
-  const ouv=feat('taches')&&state.lists[0];if(ouv&&hr>=h0){const dn=state.done[todayKey]||{},left=ouv.items.filter(i=>!dn[i.id]).length;
-    if(left)r.push({key:'open',lvl:'warn',tag:'Rappel',txt:`${left} tâche${left>1?'s':''} « ${esc(ouv.name)} » pas encore cochée${left>1?'s':''}.`,go:'taches'});}
+  if(feat('taches')&&hr>=h0){const dn=state.done[todayKey]||{};
+    state.lists.forEach((l,i)=>{if(!(l.remind===true||(l.remind===undefined&&i===0)))return;const left=l.items.filter(x=>!dn[x.id]).length;
+      if(left)r.push({key:'list-'+l.id,lvl:'warn',tag:'Rappel',txt:`${left} tâche${left>1?'s':''} « ${esc(l.name)} » pas encore cochée${left>1?'s':''}.`,go:'taches'});});}
   return r;
 }
 function notifyLoop(){
@@ -1312,6 +1515,25 @@ function renderEmployee(){
   gate($('e-leaves').closest('.card'),F.conges!==false);gate($('e-notes').closest('.card'),F.annonces!==false);
   gate($('e-loss-card'),F.pertes!==false);
   $('e-losses').innerHTML=lossTable(eView.products||[],todayKey,eView.losses||{},'elossq');
+  // Mes heures : prévu, pointé, contrat, et historique des 14 derniers jours
+  {let plan=0;for(let d=0;d<7;d++){const sh=shift(thisMonday,d);if(sh)plan+=dur(sh.s,sh.e);}
+   let worked=0;for(let d=0;d<7;d++)worked+=workedMin(punchesOf(eView.punches||[],eid,k(addDays(thisMonday,d))));
+   const contract=(e.contract||0)*60,hist=[];
+   for(let i=0;i<14;i++){const dk=k(addDays(today,-i)),pp=punchesOf(eView.punches||[],eid,dk);if(pp.length)hist.push({dk,pp});}
+   $('e-hours').innerHTML=`<div class="kpis"><div class="kpi"><span class="muted small">Prévu cette semaine</span><span class="big">${fh(plan)}</span>${contract?`<span class="muted small">Contrat : ${fh(contract)}</span>`:''}</div>
+     ${F.badgeuse?`<div class="kpi"><span class="muted small">Pointé cette semaine</span><span class="big">${fh(worked)}</span>${plan?`<div class="bar"><span style="width:${Math.min(100,Math.round(worked/plan*100))}%"></span></div>`:''}</div>`:''}</div>
+     ${F.badgeuse&&hist.length?`<h3 style="margin-top:6px">Mes pointages</h3><ul class="list">${hist.map(h=>`<li><span class="grow"><strong>${DAYS_LONG[(fromKey(h.dk).getDay()+6)%7]} ${fmtDM.format(fromKey(h.dk))}</strong><span class="muted small">${h.pp.map(p=>(p.kind==='in'?'arrivée ':'départ ')+hm(p.at)).join(' · ')}</span></span><span class="qty small">${fh(workedMin(h.pp))}</span></li>`).join('')}</ul>`:''}`;}
+  // Collègues présents aujourd'hui
+  {const T=eView.team_today||[];
+   $('e-team').innerHTML=T.length?T.map(t=>`<li><span class="chip ${pcls(t.p)}">${esc(t.p||'')}</span><span class="grow"><strong>${esc(t.name)}</strong></span><span class="qty small">${esc(t.s||'')}–${esc(t.e||'')}</span></li>`).join(''):'<li class="empty-note">Aucun collègue planifié aujourd\'hui.</li>';
+   gate($('e-team').closest('.card'),eView.team_today!==undefined);}
+  // Relevés déjà faits aujourd'hui
+  {const TT=(eView.temps_today||[]).filter(t=>k(new Date(t.at))===todayKey);
+   if(F.hygiene!==false&&TT.length)$('e-tasks').insertAdjacentHTML('beforeend',`<p class="muted small" style="margin:6px 0 0">Déjà relevé aujourd'hui : ${TT.map(t=>{const q=(eView.equipments||[]).find(x=>x.name===t.equip),ok=!q||(t.val>=q.min&&t.val<=q.max);return `${esc(t.equip)} ${num(t.val)} °C à ${hm(t.at)}${ok?'':' (hors norme)'}`;}).join(' · ')}</p>`);}
+  // Stock modifiable par l'équipe
+  {const ST=eView.stock;gate($('e-stock-card'),F.stock===true&&Array.isArray(ST));
+   if(Array.isArray(ST)){const cats=[...new Set(ST.map(x=>(x.cat||'').trim()).filter(Boolean))];
+     $('e-stock').innerHTML=stockGroups(ST,'').map(([c,items])=>`${cats.length?`<div class="group-title">${ic('folder')}${esc(c)}</div>`:''}<ul class="list">${items.sort((a,b)=>a.name.localeCompare(b.name,'fr')).map(x=>`<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(x.name)}</strong><span class="muted small">${esc(x.unit||'')}${Number(x.qty)<Number(x.min)?' · à commander':''}</span></span><span class="row" style="gap:6px;flex-wrap:nowrap"><button type="button" class="icon-btn" data-estock="${x.id}:-1" aria-label="Retirer 1">−</button><span class="qty" data-eq="${x.id}">${num(x.qty)}</span><button type="button" class="icon-btn" data-estock="${x.id}:1" aria-label="Ajouter 1">+</button></span></li>`).join('')}</ul>`).join('')||'<p class="empty-note">Aucun article en stock.</p>';}}
   const N=[...(eView.notes||[])].sort((a,b)=>b.date.localeCompare(a.date));
   $('e-notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}</p></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
 }
@@ -1326,6 +1548,7 @@ document.addEventListener('click',async e2=>{
   if(a==='punchcancel'){pendingPunch=null;renderEmployee();return;}
   if(a==='punchgo'){const code=($('e-pcode').value||'').trim();if(!/^\d{4}$/.test(code)){toast('Le code fait 4 chiffres');b.disabled=false;return;}
     const kind=b.dataset.kind;pendingPunch=null;if(await empAction('punch',{kind,code}))toast(kind==='in'?'Bonne journée !':'Journée terminée, à bientôt !');else{pendingPunch=kind;renderEmployee();}return;}
+  if(a==='stock'){return;}
   else if(a==='temp'){const v=parseFloat($('e-val').value);if(isNaN(v))toast('Indique la température relevée');else if(await empAction('temp',{equip:$('e-equip').value,val:v}))toast('Relevé enregistré');}
   else if(a==='leave'){const from=$('e-lfrom').value,to=$('e-lto').value;if(!from||!to||to<from)toast('La date de fin doit être après la date de début');
     else if(await empAction('leave',{type:$('e-ltype').value,from,to}))toast('Demande envoyée à ton responsable');}
@@ -1338,6 +1561,11 @@ document.addEventListener('change',async e2=>{const c=e2.target;if(mode!=='emplo
   const ent=(data.losses||{})[c.dataset.elossq],cell=document.querySelector(`[data-v-elossq="${c.dataset.elossq}"]`);if(cell)cell.textContent=eur2.format(ent?ent.v:0);
   const t=document.querySelector('[data-total-elossq]');if(t)t.textContent=eur2.format(Object.values(data.losses||{}).reduce((p,x)=>p+(x.v||0),0));});
 setInterval(()=>{if(mode==='employee'&&!document.hidden)loadEmployee(true);},60000);
+document.addEventListener('click',async e2=>{
+  const b=e2.target.closest('[data-estock]');if(!b||mode!=='employee')return;const[item,dl]=b.dataset.estock.split(':');
+  const cell=document.querySelector(`[data-eq="${item}"]`),it=(eView.stock||[]).find(x=>x.id===item);if(it){it.qty=Math.max(0,Number(it.qty)+Number(dl));if(cell)cell.textContent=num(it.qty);}
+  const {data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:'stock',p_payload:{item,delta:Number(dl)},p_day:todayKey});
+  if(error){toast(frError(error));return loadEmployee(true);}eView.stock=data.stock;});
 
 /* ---------- Créer, rejoindre, changer de commerce ---------- */
 let joinPreview=null;
@@ -1373,7 +1601,7 @@ function authStep(step){
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
   if(/Could not find the function|function .* does not exist|schema cache/i.test(m))return 'La base de données doit être mise à jour : lance le dernier fichier de migration dans Supabase.';
-  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue)/.test(m))return m+'.';
+  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable)/.test(m))return m+'.';
   if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
   if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
   if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
@@ -1385,7 +1613,8 @@ function showApp(){
   $('auth').hidden=true;$('appmain').hidden=false;$('nav').hidden=false;document.body.classList.add('with-nav');
   $('nav-shop').textContent=state.shop||(company&&company.name)||'Démo';$('titlebar-shop').textContent='· '+$('nav-shop').textContent;
   $('shopname').textContent='MonKiosk · '+(state.shop||(company&&company.name)||'Démo');
-  $('account').hidden=mode==='demo';$('sync').hidden=false;
+  $('account').hidden=true;$('sync').hidden=true;
+  const mail=user&&user.email||'';$('nav-user').textContent=mode==='demo'?'Quitter la démo':(mail||'Compte');$('nav-avatar').textContent=mode==='demo'?'×':(mail[0]||'?').toUpperCase();
   render();
 }
 async function boot(){
@@ -1479,7 +1708,7 @@ $('a-company').addEventListener('submit',async ev=>{
 $('a-demo').onclick=()=>{mode='demo';state=seed();state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
 document.addEventListener('click',async ev=>{if(ev.target.closest('[data-logout]')){if(sb)await sb.auth.signOut();try{localStorage.removeItem('monkiosk-last-company');}catch(e){}location.reload();}});
 $('w-team').onclick=()=>openEmp(null);
-$('account').onclick=()=>{
+function openAccount(){
   const owner=mode==='cloud'&&company&&company.role!=='employee',st=owner?state.settings:null;
   const hours=[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st&&st.tempHour===h?'selected':''}>${h} h</option>`).join('');
   const cos=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${m.role==='employee'?'Salarié':'Responsable'}</span></span>${company&&m.id===company.id?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button>`}</li>`).join('');
@@ -1493,7 +1722,9 @@ $('account').onclick=()=>{
   <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
   ${desktopBlock()}
   <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button>${owner?'<button type="submit" class="btn primary">Enregistrer</button>':''}</div>`,{type:'account'},owner?'f-shop':null);
-};
+}
+$('account').onclick=openAccount;
+$('nav-account').onclick=()=>mode==='demo'?location.reload():openAccount();
 function openModules(){
   const m=state.settings.modules||{};
   const row=x=>{const lock=!unlocked(x.key);return `<label class="switch"><input type="checkbox" data-mod="${x.key}" ${!lock&&m[x.key]!==false?'checked':''} ${lock?'disabled':''}><span class="grow"><strong>${esc(x.name)} ${lock?'<span class="chip warn">Sur demande</span>':x.premium?'<span class="chip ok">Débloqué</span>':''}</strong><span class="muted small">${esc(x.desc)}</span></span></label>`;};
