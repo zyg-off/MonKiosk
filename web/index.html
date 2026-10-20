@@ -275,6 +275,8 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .nav-foot{display:flex}
 .nav-account{display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--muted);border-radius:18px;padding:7px 10px;flex-direction:column;gap:3px;font-size:.68rem;font-weight:600;min-width:56px}
 .nav-account:hover{background:var(--soft);color:var(--ink)}
+.nav-account[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.nav-account[aria-current="page"] .who strong,.nav-account[aria-current="page"] .who small{color:var(--accent-ink)}
 .avatar{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex:none;font-family:var(--f-display)}
 .nav-account .who{display:none;flex-direction:column;min-width:0}
 .nav-account .who strong{font-weight:600}
@@ -335,6 +337,14 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .bubble p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .cell.extra{background:var(--ok-bg);color:var(--ok)}
 .mcal .tag.extra{background:var(--ok-bg);color:var(--ok)}
+.acc-hero{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.acc-hero .avatar{width:64px;height:64px;font-size:1.6rem;border-radius:20px}
+.acc-hero h2{font-size:1.4rem}
+.acc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+@media (max-width:760px){.acc-grid{grid-template-columns:minmax(0,1fr)}}
+.acc-grid .card label{display:flex;flex-direction:column;gap:6px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.sheet.wide{max-width:780px}
+@media (min-width:640px){.sheet.wide{max-height:92vh}}
 /* print */
 #print-area{display:none}
 @media print{
@@ -589,6 +599,9 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     </div>
   </section>
 
+  <!-- COMPTE -->
+  <section class="view" id="v-compte" hidden></section>
+
   <!-- ESPACE SALARIÉ -->
   <section class="view" id="v-employee" hidden>
     <div class="etab" data-etab="e-home">
@@ -660,7 +673,7 @@ const COLORS=8;
 function postes(){return (state&&state.postes&&state.postes.length)?state.postes:DEMO_POSTES;}
 function pcls(name){const p=postes().find(x=>x.name===name);return p?'pc'+p.color:'p-net';}
 const LEAVE_TYPES=['Congés payés','Maladie','Formation','Absence'];
-const VIEWS={accueil:'Accueil',planning:'Planning',equipe:'Équipe',taches:'Tâches et hygiène',stock:'Stock',ventes:'Ventes'};
+const VIEWS={compte:'Mon compte',accueil:'Accueil',planning:'Planning',equipe:'Équipe',taches:'Tâches et hygiène',stock:'Stock',ventes:'Ventes'};
 const KEY='monkiosk-v1';
 const $=id=>document.getElementById(id);
 const ICONS={
@@ -1003,10 +1016,12 @@ function applyGates(){
 }
 function render(){
   $('example').hidden=!state.example;
+  if(view==='compte'&&!$('v-compte').hidden)renderAccountPage();
   renderHome();renderPlanning();renderTeam();renderPostes();renderTasks();renderStock();renderSales();renderNav();applyGates();
 }
 function renderNav(){
   document.querySelectorAll('.nav [data-view]').forEach(b=>{if(b.dataset.view===view)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  if(view==='compte')$('nav-account').setAttribute('aria-current','page');else $('nav-account').removeAttribute('aria-current');
   document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-'+view);
   $('viewtitle').textContent=VIEWS[view];
   const badge=(id,n)=>{const b=$(id);b.hidden=!n;b.textContent=n;};
@@ -1249,7 +1264,7 @@ function renderSales(){
 
 /* ---------- Sheets ---------- */
 const overlay=$('overlay'),sheet=$('sheet');let ctx=null;
-function openSheet(html,c,focusId){ctx=c;sheet.innerHTML=html;overlay.hidden=false;const f=$(focusId);if(f)f.focus();}
+function openSheet(html,c,focusId){ctx=c;sheet.innerHTML=html;sheet.classList.toggle('wide',['settings','admin','modules','inventory'].includes(c&&c.type));overlay.hidden=false;const f=$(focusId);if(f)f.focus();}
 function closeSheet(){overlay.hidden=true;ctx=null;}
 const actions=(del)=>`<div class="sheet-actions">${del?`<button type="button" class="btn danger" id="f-del">${del}</button>`:''}<button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>`;
 function openShift(e,d){
@@ -1872,7 +1887,7 @@ const I18N={
   'Demande annulée':'Pedido cancelado','Jour indiqué comme indisponible':'Dia marcado como indisponível','Jour de nouveau disponible':'Dia de novo disponível','Disponibilité envoyée à ton responsable':'Disponibilidade enviada ao responsável','Disponibilité retirée':'Disponibilidade retirada',
   'Demande envoyée à tes collègues':'Pedido enviado aos colegas','Proposition envoyée. Ton responsable va valider.':'Proposta enviada. O responsável vai validar.','Échange annulé':'Troca cancelada','Enregistré':'Guardado','Récapitulatif téléchargé':'Resumo descarregado',
   'Ton planning a été mis à jour':'O teu horário foi atualizado','Une demande de congé a reçu une réponse':'Um pedido de férias recebeu resposta','Un échange de créneau a évolué':'Uma troca de turno mudou',"Nouveau message de l'équipe":'Nova mensagem da equipa','Nouvelle annonce':'Novo aviso',
-  'Mon téléphone (visible par ton responsable)':'O meu telefone (visível pelo responsável)','Notifications':'Notificações','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'Novo horário, férias validadas, troca aceite, novas mensagens.','Mon compte':'A minha conta','Me déconnecter':'Terminar sessão','Fermer':'Fechar','Mes commerces':'As minhas lojas','Salarié':'Funcionário'},
+  'Mon téléphone (visible par ton responsable)':'O meu telefone (visível pelo responsável)','Mon compte':'A minha conta','Préférences':'Preferências',"Thème de l'affichage (cet appareil)":'Tema (este dispositivo)','Automatique (comme le système)':'Automático (como o sistema)','Clair':'Claro','Sombre':'Escuro','Ouvrir':'Abrir','Ouvert':'Aberto','Créer un commerce':'Criar uma loja','Rejoindre avec un code':'Entrar com um código','Rôle manager':'Função de gestor','Notifications':'Notificações','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'Novo horário, férias validadas, troca aceite, novas mensagens.','Mon compte':'A minha conta','Me déconnecter':'Terminar sessão','Fermer':'Fechar','Mes commerces':'As minhas lojas','Salarié':'Funcionário'},
  en:{"Aujourd'hui":'Today','Planning':'Schedule','Tâches':'Tasks','Messages':'Messages','Stock':'Stock','Congés':'Time off','Compte':'Account','Bonjour':'Hello',
   "Avec toi aujourd'hui":'Working with you today','Annonces':'Announcements','Signaler un problème':'Report a problem',"Une panne, une casse, un souci d'hygiène ou de stock ? Ton responsable est prévenu tout de suite.":'A breakdown, breakage, hygiene or stock issue? Your manager is told right away.',
   'Matériel':'Equipment','Hygiène':'Hygiene','Sécurité':'Safety','Autre':'Other','Envoyer':'Send','Mes heures':'My hours','Échanges de créneaux':'Shift swaps',
@@ -1898,7 +1913,7 @@ const I18N={
   'Demande annulée':'Request cancelled','Jour indiqué comme indisponible':'Day marked unavailable','Jour de nouveau disponible':'Day available again','Disponibilité envoyée à ton responsable':'Availability sent to your manager','Disponibilité retirée':'Availability removed',
   'Demande envoyée à tes collègues':'Request sent to your colleagues','Proposition envoyée. Ton responsable va valider.':'Offer sent. Your manager will approve it.','Échange annulé':'Swap cancelled','Enregistré':'Saved','Récapitulatif téléchargé':'Summary downloaded',
   'Ton planning a été mis à jour':'Your schedule was updated','Une demande de congé a reçu une réponse':'A time-off request got an answer','Un échange de créneau a évolué':'A shift swap changed',"Nouveau message de l'équipe":'New team message','Nouvelle annonce':'New announcement',
-  'Mon téléphone (visible par ton responsable)':'My phone (visible to your manager)','Notifications':'Notifications','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'New schedule, time off approved, swap accepted, new messages.','Mon compte':'My account','Me déconnecter':'Log out','Fermer':'Close','Mes commerces':'My shops','Salarié':'Employee'}
+  'Mon téléphone (visible par ton responsable)':'My phone (visible to your manager)','Mon compte':'My account','Préférences':'Preferences',"Thème de l'affichage (cet appareil)":'Display theme (this device)','Automatique (comme le système)':'Automatic (system)','Clair':'Light','Sombre':'Dark','Ouvrir':'Open','Ouvert':'Open','Créer un commerce':'Create a shop','Rejoindre avec un code':'Join with a code','Rôle manager':'Manager role','Notifications':'Notifications','Nouveau planning, congé validé, échange accepté, nouveaux messages.':'New schedule, time off approved, swap accepted, new messages.','Mon compte':'My account','Me déconnecter':'Log out','Fermer':'Close','Mes commerces':'My shops','Salarié':'Employee'}
 };
 function T(s){const d=I18N[eLang()];return (d&&d[s])||s;}
 // Traduit l'espace salarié après chaque affichage (phrases connues, jours et mois)
@@ -1916,6 +1931,7 @@ function translateEmployee(){if(mode!=='employee')return;translateNode($('v-empl
 function renderEmployeeNav(){
   const F=eView.features||{};
   const show={'e-messages':F.messagerie!==false,'e-home':true,'e-planning':true,'e-taches':F.taches!==false||F.hygiene!==false||F.pertes!==false,'e-stock':F.stock===true&&Array.isArray(eView.stock),'e-conges':F.conges!==false};
+  if(eTab==='e-compte')return;
   if(!show[eTab])eTab='e-home';
   document.querySelectorAll('#nav [data-eview]').forEach(b=>{b.parentElement.hidden=!show[b.dataset.eview];if(b.dataset.eview===eTab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   document.querySelectorAll('#v-employee .etab').forEach(t=>t.hidden=t.dataset.etab!==eTab);
@@ -1932,7 +1948,7 @@ document.addEventListener('click',ev=>{
   if(c){eCalSel=c.dataset.ecal;const dt=fromKey(eCalSel);if(dt.getMonth()!==eCalMonth.getMonth())eCalMonth=new Date(dt.getFullYear(),dt.getMonth(),1);renderEmployee();}
   if(n){eCalMonth=new Date(eCalMonth.getFullYear(),eCalMonth.getMonth()+Number(n.dataset.ecalnav),1);renderEmployee();}
 });
-document.addEventListener('click',ev=>{const b=ev.target.closest('[data-eview]');if(!b||mode!=='employee')return;eTab=b.dataset.eview;if(eTab==='e-messages'){markSeen(eView.messages||[]);const th=$('e-thread');setTimeout(()=>th.scrollTop=th.scrollHeight,0);}renderEmployeeNav();translateEmployee();window.scrollTo(0,0);});
+document.addEventListener('click',ev=>{const b=ev.target.closest('[data-eview]');if(!b||mode!=='employee')return;eTab=b.dataset.eview;document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-employee');$('nav-account').removeAttribute('aria-current');if(eTab==='e-messages'){markSeen(eView.messages||[]);const th=$('e-thread');setTimeout(()=>th.scrollTop=th.scrollHeight,0);}renderEmployeeNav();translateEmployee();window.scrollTo(0,0);});
 function renderEmployee(){
   const e=eView.employee||{},eid=e.id,di=(today.getDay()+6)%7,F=eView.features||{};
   const shift=(ws,d)=>((eView.weeks[k(ws)]||{})[eid]||{})[d];
@@ -2239,26 +2255,55 @@ $('a-company').addEventListener('submit',async ev=>{
 window.__demo=()=>{mode='demo';state=normalize(seed(),'Au Pain Doré');state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
 document.addEventListener('click',async ev=>{if(ev.target.closest('[data-logout]')){if(sb)await sb.auth.signOut();try{localStorage.removeItem('monkiosk-last-company');}catch(e){}location.reload();}});
 $('w-team').onclick=()=>openEmp(null);
-function openAccount(){
-  const owner=mode==='cloud'&&company&&company.role==='owner',st=owner?state.settings:null,manager=company&&company.role==='manager';
-  const hours=[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st&&st.tempHour===h?'selected':''}>${h} h</option>`).join('');
-  const cos=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${m.role==='employee'?'Salarié':'Responsable'}</span></span>${company&&m.id===company.id?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button>`}</li>`).join('');
-  openSheet(`<h2>Mon compte</h2>
-  <p class="muted small" style="margin:0">Connecté en tant que <strong>${esc(user?user.email:'')}</strong></p>
-  ${owner?`<label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>`:''}
-  <label>Thème de l'affichage (cet appareil)<select id="f-theme">${[['auto','Automatique (comme le système)'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<option value="${v}" ${(localStorage.getItem('monkiosk-theme')||'auto')===v?'selected':''}>${l}</option>`).join('')}</select></label>
-  ${mode==='employee'?`<label>Langue / Idioma / Language<select id="f-elang">${[['fr','Français'],['pt','Português'],['en','English']].map(([v,l])=>`<option value="${v}" ${eLang()===v?'selected':''}>${l}</option>`).join('')}</select></label>
-  <label class="switch" style="border:0;padding:0"><input type="checkbox" id="f-enotif" ${localStorage.getItem('monkiosk-enotif')==='1'?'checked':''}><span class="grow"><strong>Notifications</strong><span class="muted small">Nouveau planning, congé validé, échange accepté, nouveaux messages.</span></span></label>`:''}
-  ${mode==='employee'?`<label>Mon téléphone (visible par ton responsable)<input type="tel" id="f-phone" value="${esc((eView&&eView.employee&&eView.employee.phone)||'')}" placeholder="Ex. 06 12 34 56 78"></label>`:''}
-  ${owner||isAdmin?`<div class="row">${owner?'<button type="button" class="btn sm primary" data-settings>Paramètres du commerce</button><button type="button" class="btn sm" data-modules>Options</button>':''}${isAdmin?'<button type="button" class="btn sm" data-admin>Administration MonKiosk</button>':''}</div>`:''}
-  ${manager?`<div class="row">${mode==='employee'?'<button type="button" class="btn sm primary" data-mmanage>Gérer le commerce</button>':'<button type="button" class="btn sm primary" data-mspace>Mon espace salarié</button>'}</div>`:''}
-  <h3>Mes commerces</h3><ul class="list">${cos}</ul>
-  <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
-  ${desktopBlock()}
-  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button>${owner||mode==='employee'?'<button type="submit" class="btn primary">Enregistrer</button>':''}</div>`,{type:'account'},owner?'f-shop':null);
+function openAccountPage(){
+  if(!overlay.hidden)closeSheet();
+  if(mode==='employee'){document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-compte');eTab='e-compte';document.querySelectorAll('#nav [data-eview]').forEach(b=>b.removeAttribute('aria-current'));$('viewtitle').textContent=T('Mon compte');}
+  else go('compte');
+  $('nav-account').setAttribute('aria-current','page');renderAccountPage();window.scrollTo(0,0);
 }
+function renderAccountPage(){
+  const owner=mode==='cloud'&&company&&company.role==='owner',manager=company&&company.role==='manager',emp=mode==='employee';
+  const mail=user&&user.email||'',role=owner?'Patron':manager?'Manager':'Salarié',theme=(()=>{try{return localStorage.getItem('monkiosk-theme')||'auto';}catch(e){return 'auto';}})();
+  const shopName=emp?(eView&&eView.shop)||(company&&company.name):state&&state.shop;
+  const cos=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${m.role==='employee'?'Salarié':m.role==='manager'?'Manager':'Patron'}</span></span>${company&&m.id===company.id?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button>`}</li>`).join('');
+  $('v-compte').innerHTML=`
+  <div class="card"><div class="acc-hero"><span class="avatar">${esc((mail[0]||'?').toUpperCase())}</span><div style="flex:1;min-width:0"><h2>${esc(mail)}</h2><span class="muted">${role} · ${esc(shopName||'')}</span></div><button type="button" class="btn danger" data-logout>Me déconnecter</button></div></div>
+  <div class="acc-grid">
+    <div class="card"><h2 class="hi">${ic('sun')}Préférences</h2>
+      <label>Thème de l'affichage (cet appareil)<select id="p-theme">${[['auto','Automatique (comme le système)'],['light','Clair'],['dark','Sombre']].map(([v,l])=>`<option value="${v}" ${theme===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      ${emp?`<label>Langue / Idioma / Language<select id="p-lang">${[['fr','Français'],['pt','Português'],['en','English']].map(([v,l])=>`<option value="${v}" ${eLang()===v?'selected':''}>${l}</option>`).join('')}</select></label>
+      <label class="switch" style="border:0;padding:0"><input type="checkbox" id="p-notif" ${localStorage.getItem('monkiosk-enotif')==='1'?'checked':''}><span class="grow"><strong>Notifications</strong><span class="muted small">Nouveau planning, congé validé, échange accepté, nouveaux messages.</span></span></label>
+      <label>Mon téléphone (visible par ton responsable)<input type="tel" id="p-phone" value="${esc((eView&&eView.employee&&eView.employee.phone)||'')}" placeholder="Ex. 06 12 34 56 78"></label>
+      <button type="button" class="btn primary" id="p-save" style="align-self:flex-start">Enregistrer</button>`:''}
+    </div>
+    ${owner?`<div class="card"><h2 class="hi">${ic('store')}Mon commerce</h2>
+      <label>Nom du commerce<div class="row" style="flex-wrap:nowrap"><input type="text" id="p-shop" value="${esc(state.shop||'')}"><button type="button" class="btn" id="p-shopsave">Enregistrer</button></div></label>
+      <div class="row"><button type="button" class="btn primary" data-settings>Paramètres du commerce</button><button type="button" class="btn" data-modules>Options</button></div>
+      <p class="muted small" style="margin:0">Horaires, effectif, règles de travail, apparence, notifications et chiffres.</p></div>`:''}
+    ${manager?`<div class="card"><h2 class="hi">${ic('key')}Rôle manager</h2><p class="muted small" style="margin:0">Tu peux gérer le planning, l'équipe et le stock, ou retrouver ton espace salarié.</p>
+      <div class="row">${emp?'<button type="button" class="btn primary" data-mmanage>Gérer le commerce</button>':'<button type="button" class="btn primary" data-mspace>Mon espace salarié</button>'}</div></div>`:''}
+    <div class="card"><h2 class="hi">${ic('store')}Mes commerces</h2><ul class="list">${cos||'<li class="empty-note">Aucun commerce.</li>'}</ul>
+      <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div></div>
+    ${window.monkioskDesktop?`<div class="card"><h2 class="hi">${ic('save')}Application Windows</h2>${desktopBlock()}</div>`:''}
+    ${isAdmin?`<div class="card"><h2 class="hi">${ic('key')}Administration MonKiosk</h2><p class="muted small" style="margin:0">Débloque les options avancées de chaque commerce.</p><button type="button" class="btn" data-admin style="align-self:flex-start">Ouvrir l'administration</button></div>`:''}
+  </div>`;
+  if(emp)translateNode($('v-compte'));
+}
+function openAccount(){openAccountPage();}
+document.addEventListener('change',ev=>{
+  if(ev.target.id==='p-theme'){try{localStorage.setItem('monkiosk-theme',ev.target.value);}catch(e){}applyTheme();toast('Thème appliqué');}
+  if(ev.target.id==='p-lang'&&mode==='employee'){empAction('lang',{lang:ev.target.value}).then(ok=>{if(ok){renderAccountPage();translateEmployee();toast('Enregistré');}});}
+  if(ev.target.id==='p-notif'){try{localStorage.setItem('monkiosk-enotif',ev.target.checked?'1':'0');}catch(e){}if(ev.target.checked&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission();}
+});
+document.addEventListener('click',ev=>{
+  if(ev.target.id==='p-save'&&mode==='employee'){empAction('profile',{phone:$('p-phone').value.trim()}).then(ok=>{if(ok)toast('Enregistré');});}
+  if(ev.target.id==='p-shopsave'){const name=$('p-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
+    state.shop=name;company.name=name;const ms=memberships.find(x=>x.id===company.id);if(ms)ms.name=name;
+    $('shopname').textContent='MonKiosk · '+name;$('nav-shop').textContent=name;$('titlebar-shop').textContent='· '+name;
+    if(sb)sb.from('companies').update({name}).eq('id',company.id).then(()=>{});done('Nom du commerce enregistré',`Commerce renommé : ${name}`);commit();renderAccountPage();}
+});
 $('account').onclick=openAccount;
-$('nav-account').onclick=()=>mode==='demo'?location.reload():openAccount();
+$('nav-account').onclick=()=>mode==='demo'?location.reload():openAccountPage();
 function openSettings(){
   const st=state.settings,RU=rules(),H=st.hours||{},NK=Object.assign({temps:true,stock:true,conges:true,signalements:true,echanges:true,messages:true},st.notifyKinds||{});
   const hm2=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
