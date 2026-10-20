@@ -399,6 +399,12 @@ body.tablet-on{overflow:hidden}body.tablet-on .titlebar{z-index:26}
 .tb-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.tb-keys button{padding:18px 0;font-size:1.5rem;font-weight:700;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
 .tb-keys button[data-tbback]{font-size:.95rem}
 .tb-ok{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--ok)}.tb-ok .ic{width:64px;height:64px}.tb-ok h2{color:var(--ink)}
+/* affichage téléphone */
+@media (max-width:959px){.nav{display:flex;align-items:center;gap:2px}.nav ul{gap:0}.nav-account .avatar{width:22px;height:22px;font-size:.7rem}}
+@media (max-width:420px){.nav{padding:4px;max-width:calc(100% - 12px)}.nav button,.nav-account{padding:6px 5px;min-width:0}.nav button span.lbl,.nav-account .lbl-m{font-size:.6rem}.nav .badge{right:0}}
+.row>input:not([type=checkbox]):not([type=radio]):not([type=file]),.row>select{flex:1 1 110px;min-width:100px}
+.note>p{flex:1 1 220px;min-width:0}
+@media (max-width:640px){.list li{flex-wrap:wrap}.list li .grow{flex:1 1 160px}.acc-hero h2{font-size:1.1rem;overflow-wrap:anywhere}.acc-hero>div{flex:1 1 180px}.acc-hero .btn{width:100%}.hide-m{display:none}.loss-table{font-size:.85rem}.loss-table .chip{white-space:normal;text-align:center}}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom, 0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:.9rem;z-index:30;max-width:calc(100% - 32px);text-align:center}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(16px);opacity:.6}}}
 </style>
@@ -2562,14 +2568,14 @@ function renderForecast(){
     if(closed)hint='<span class="muted small">Fermé</span>';
     else if(f&&prod&&pl){const need=f.ca/prod*60;hint=pl<need*0.8?'<span class="chip warn">Renfort conseillé</span>':pl>need*1.25?'<span class="chip info">Effectif large</span>':'<span class="chip ok">Équilibré</span>';}
     else if(f&&!pl)hint='<span class="chip warn">Personne de prévu</span>';
-    rows.push(`<tr><td><strong>${i===0?"Aujourd'hui":DAYS_LONG[di]}</strong> <span class="muted small">${fmtDM.format(d)}</span>${hol?` <span class="chip warn">${esc(hol)}</span>`:''}</td><td class="num">${f&&!closed?eur.format(f.ca):'—'}</td><td class="num">${f&&f.tk&&!closed?num(f.tk,0):'—'}</td><td class="num">${pl?fh(pl):'—'}</td><td>${hint}</td></tr>`);}
+    rows.push(`<tr><td><strong>${i===0?"Aujourd'hui":DAYS_LONG[di]}</strong> <span class="muted small">${fmtDM.format(d)}</span>${hol?` <span class="chip warn">${esc(hol)}</span>`:''}</td><td class="num">${f&&!closed?eur.format(f.ca):'—'}</td><td class="num hide-m">${f&&f.tk&&!closed?num(f.tk,0):'—'}</td><td class="num">${pl?fh(pl):'—'}</td><td>${hint}</td></tr>`);}
   if(!any){box.innerHTML='<p class="empty-note">Saisis tes ventes pendant quelques semaines : les prévisions jour par jour apparaîtront ici.</p>';$('fc-basis').textContent='';return;}
   const avg=weekdayAverages(),max=Math.max(...avg),best=avg.indexOf(max);
   $('fc-basis').textContent=`Basé sur ${any} semaine${any>1?'s':''} de ventes`;
   box.innerHTML=`<div class="kpis"><div class="kpi"><span class="muted small">CA prévu sur 7 jours</span><span class="big">${eur.format(tot)}</span></div>
     <div class="kpi"><span class="muted small">Meilleur jour en moyenne</span><span class="big" style="font-size:1.3rem">${DAYS_LONG[best]}</span><span class="muted small">${eur.format(max)}</span></div>
     ${prod?`<div class="kpi"><span class="muted small">CA par heure de travail</span><span class="big">${eur.format(prod)}</span><span class="muted small">moyenne des 8 dernières semaines</span></div>`:''}</div>
-  <div style="overflow-x:auto"><table class="loss-table"><thead><tr><th>Jour</th><th style="text-align:right">CA prévu</th><th style="text-align:right">Tickets</th><th style="text-align:right">Heures planifiées</th><th>Effectif</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+  <div style="overflow-x:auto"><table class="loss-table"><thead><tr><th>Jour</th><th style="text-align:right">CA prévu</th><th style="text-align:right" class="hide-m">Tickets</th><th style="text-align:right">Heures planifiées</th><th>Effectif</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
   <h3 style="margin:4px 0 0">Moyenne par jour de la semaine</h3>
   <div class="wd-bars">${DAYS.map((d,i)=>`<div><span class="small">${d}</span><div class="bar"><span style="width:${max?Math.round(avg[i]/max*100):0}%"></span></div><span class="num small">${avg[i]?eur.format(avg[i]):'—'}</span></div>`).join('')}</div>
   <p class="muted small" style="margin:0">Calcul : moyenne des mêmes jours sur les 8 dernières semaines, les plus récentes comptent davantage, jours fériés écartés. « Effectif » compare les heures planifiées au CA prévu.</p>`;
@@ -2665,8 +2671,8 @@ function renderGroup(){
   card.hidden=false;
   card.innerHTML=`<div class="card-head"><h2 class="hi">${ic('layers')}Mes boutiques</h2><span class="chip info">${rows.length} commerces</span></div>
   <div class="kpis"><div class="kpi"><span class="muted small">CA des 7 derniers jours</span><span class="big">${eur.format(tot.week)}</span></div><div class="kpi"><span class="muted small">CA du mois</span><span class="big">${eur.format(tot.month)}</span></div><div class="kpi"><span class="muted small">En poste aujourd'hui</span><span class="big">${tot.team}</span></div><div class="kpi"><span class="muted small">Points à traiter</span><span class="big">${tot.todo}</span></div></div>
-  <div style="overflow-x:auto"><table class="loss-table"><thead><tr><th>Commerce</th><th style="text-align:right">Hier</th><th style="text-align:right">7 jours</th><th style="text-align:right">Ce mois</th><th style="text-align:right">Équipe</th><th style="text-align:right">À traiter</th><th></th></tr></thead><tbody>
-  ${rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong></td><td class="num">${r.f.yday!=null?eur.format(r.f.yday):'—'}</td><td class="num">${eur.format(r.f.week)}${r.f.delta!=null?` <span class="delta ${r.f.delta>=0?'up':'down'}">${r.f.delta>=0?'+':''}${r.f.delta} %</span>`:''}</td><td class="num">${eur.format(r.f.month)}</td><td class="num">${r.f.team}</td><td class="num">${r.f.todo?`<span class="chip warn">${r.f.todo}</span>`:'0'}</td><td style="text-align:right">${r.isCur?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${r.m.id}">Ouvrir</button>`}</td></tr>`).join('')}</tbody></table></div>`;
+  <div style="overflow-x:auto"><table class="loss-table"><thead><tr><th>Commerce</th><th style="text-align:right" class="hide-m">Hier</th><th style="text-align:right">7 jours</th><th style="text-align:right">Ce mois</th><th style="text-align:right" class="hide-m">Équipe</th><th style="text-align:right">À faire</th><th></th></tr></thead><tbody>
+  ${rows.map(r=>`<tr><td><strong>${esc(r.name)}</strong></td><td class="num hide-m">${r.f.yday!=null?eur.format(r.f.yday):'—'}</td><td class="num">${eur.format(r.f.week)}${r.f.delta!=null?` <span class="delta ${r.f.delta>=0?'up':'down'}">${r.f.delta>=0?'+':''}${r.f.delta} %</span>`:''}</td><td class="num">${eur.format(r.f.month)}</td><td class="num hide-m">${r.f.team}</td><td class="num">${r.f.todo?`<span class="chip warn">${r.f.todo}</span>`:'0'}</td><td style="text-align:right">${r.isCur?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${r.m.id}">Ouvrir</button>`}</td></tr>`).join('')}</tbody></table></div>`;
 }
 setInterval(()=>{if(mode==='cloud'&&view==='accueil'&&!document.hidden)loadGroup();},5*60*1000);
 
