@@ -177,6 +177,21 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
 .tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .welcome ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+/* print */
+#print-area{display:none}
+@media print{
+  body>*:not(#print-area){display:none!important}
+  :root{padding:0!important}
+  body{background:#fff!important;color:#000!important}
+  #print-area{display:block!important;color:#000;font-family:var(--f-body);font-size:10.5pt;line-height:1.4}
+  #print-area h1{font-size:16pt;margin:0 0 2px}
+  #print-area h2{font-size:12pt;margin:14px 0 6px}
+  #print-area p{margin:0 0 8px}
+  #print-area table{width:100%;border-collapse:collapse;min-width:0}
+  #print-area th,#print-area td{border:1px solid #999;padding:4px 6px;font-size:9pt;text-align:left;vertical-align:top}
+  #print-area th{background:#eee}
+  @page{margin:12mm}
+}
 /* sheet */
 .overlay{position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:460px;border-radius:18px 18px 0 0;padding:20px max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow:auto}
@@ -216,7 +231,19 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
         <label>Nom du commerce<input type="text" id="a-cname" placeholder="Ex. Boulangerie Martin"></label>
         <div class="auth-msg err" id="a-cmsg" hidden></div>
         <button type="submit" class="btn primary">Créer mon commerce</button>
-        <button type="button" class="linkbtn" data-logout style="align-self:center">Me déconnecter</button>
+        <button type="button" class="btn" data-joinco>J'ai un code salarié</button>
+        <div class="row" style="justify-content:center;gap:18px"><button type="button" class="linkbtn" data-back id="a-cback">Retour</button><button type="button" class="linkbtn" data-logout>Me déconnecter</button></div>
+      </div>
+    </form>
+
+    <form id="a-join" hidden novalidate>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <p>Ton responsable t'a donné un code de 6 caractères. Saisis-le pour rejoindre ton commerce.</p>
+        <label>Code du commerce<input type="text" id="a-code" maxlength="8" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em" placeholder="Ex. 4F9K2B"></label>
+        <label id="a-jwho" hidden>Qui es-tu ?<select id="a-jemp"></select></label>
+        <div class="auth-msg err" id="a-jmsg" hidden></div>
+        <button type="submit" class="btn primary" id="a-jsubmit">Continuer</button>
+        <button type="button" class="linkbtn" data-back style="align-self:center">Retour</button>
       </div>
     </form>
 
@@ -272,6 +299,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
     </div>
     <ul class="alerts" id="plan-alerts"></ul>
     <div class="tablewrap"><table id="grid"></table></div>
+    <p class="small" id="plan-cost" style="margin:0"></p>
     <div class="legend" aria-label="Postes">
       <span id="legend-postes" style="display:contents"></span><span class="p-leave">Congé validé</span>
       <button type="button" class="linkbtn" id="edit-postes" style="font-size:.8rem">Modifier les postes</button>
@@ -279,6 +307,8 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
     <div class="actions">
       <button type="button" class="btn primary" id="add-emp">+ Ajouter un salarié</button>
       <button type="button" class="btn" id="copy-week">Reprendre la semaine précédente</button>
+      <button type="button" class="btn" id="tpl-btn">Semaines types</button>
+      <button type="button" class="btn" id="print-plan">Imprimer</button>
     </div>
     <div class="card">
       <h2>Envoyer le planning</h2>
@@ -290,6 +320,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 
   <!-- EQUIPE -->
   <section class="view" id="v-equipe" hidden>
+    <div class="card"><div class="card-head"><h2>Pointage du jour</h2><span class="muted small" id="punch-date"></span></div><ul class="list" id="punches"></ul></div>
     <div class="grid">
       <div class="card">
         <div class="card-head"><h2>Congés et absences</h2><button type="button" class="btn sm primary" id="add-leave">+ Demande</button></div>
@@ -313,6 +344,12 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
         <ul class="list" id="postes"></ul>
       </div>
     </div>
+    <div class="card" id="accounts-card" hidden>
+      <div class="card-head"><h2>Comptes salariés</h2></div>
+      <p class="muted small" style="margin:0;max-width:62ch">Donne ce code à tes salariés. Ils créent leur compte, saisissent le code et choisissent leur nom. Ils voient leur planning, badgent, cochent les tâches et demandent leurs congés, sans accès au reste.</p>
+      <div class="row"><span class="big" id="join-code" style="letter-spacing:.15em">—</span><button type="button" class="btn sm" id="copy-code">Copier</button><button type="button" class="btn sm" id="regen-code">Nouveau code</button></div>
+      <ul class="list" id="members"></ul>
+    </div>
   </section>
 
   <!-- TACHES -->
@@ -326,6 +363,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
         <button type="button" class="btn primary" id="t-add">Enregistrer</button>
       </div>
       <ul class="list" id="temps"></ul>
+      <div class="row"><button type="button" class="btn" id="register-btn">Exporter le registre d'hygiène</button></div>
     </div>
   </section>
 
@@ -359,6 +397,36 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
       <div class="card-head"><h2>14 derniers jours</h2><span class="muted small">Pointillés : moyenne</span></div>
       <div id="sales-chart"></div>
     </div>
+    <div class="card">
+      <div class="card-head"><h2>Par mois</h2><span class="muted small">12 derniers mois</span></div>
+      <div id="month-box" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
+    <div class="card">
+      <h2>Pertes et invendus</h2>
+      <div class="row">
+        <input type="date" id="l-date" aria-label="Date">
+        <input type="text" id="l-prod" list="l-prods" placeholder="Produit" aria-label="Produit"><datalist id="l-prods"></datalist>
+        <input type="number" id="l-qty" min="0" step="1" placeholder="Quantité" aria-label="Quantité" style="max-width:110px">
+        <select id="l-reason" aria-label="Motif"><option>Invendu</option><option>Périmé</option><option>Casse</option><option>Autre</option></select>
+        <input type="number" id="l-val" min="0" step="0.01" placeholder="Valeur (€)" aria-label="Valeur en euros" style="max-width:130px">
+        <button type="button" class="btn primary" id="l-add">Enregistrer</button>
+      </div>
+      <div class="kpis" id="loss-kpis"></div>
+      <ul class="list" id="losses"></ul>
+    </div>
+  </section>
+
+  <!-- ESPACE SALARIÉ -->
+  <section class="view" id="v-employee" hidden>
+    <div class="card" id="e-today"></div>
+    <div class="grid">
+      <div class="card" id="e-plan"></div>
+      <div class="card"><h2>Tâches du jour</h2><div id="e-tasks"></div></div>
+    </div>
+    <div class="grid">
+      <div class="card"><h2>Mes congés</h2><div id="e-leaves"></div></div>
+      <div class="card"><h2>Annonces</h2><div id="e-notes" style="display:flex;flex-direction:column;gap:8px"></div></div>
+    </div>
   </section>
 </div>
 
@@ -373,6 +441,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
   </ul>
 </nav>
 
+<div id="print-area"></div>
 <div class="overlay" id="overlay" hidden><form class="sheet" id="sheet" novalidate></form></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -415,11 +484,11 @@ let view='accueil';
 /* ---------- Example data ---------- */
 function seed(){
   const E=[
-    {id:'lucas',name:'Lucas',poste:'Fournil',contract:35},
-    {id:'ines',name:'Inès',poste:'Vente',contract:35},
-    {id:'marco',name:'Marco',poste:'Pâtisserie',contract:39},
-    {id:'sofia',name:'Sofia',poste:'Vente',contract:24},
-    {id:'theo',name:'Théo',poste:'Fournil',contract:35}
+    {id:'lucas',name:'Lucas',poste:'Fournil',contract:35,rate:13.2},
+    {id:'ines',name:'Inès',poste:'Vente',contract:35,rate:12.1},
+    {id:'marco',name:'Marco',poste:'Pâtisserie',contract:39,rate:14.5},
+    {id:'sofia',name:'Sofia',poste:'Vente',contract:24,rate:11.9},
+    {id:'theo',name:'Théo',poste:'Fournil',contract:35,rate:7.4}
   ];
   const S=(s,e,p)=>({s,e,p});
   const w={
@@ -430,7 +499,7 @@ function seed(){
     theo:{0:S('05:00','12:00','Fournil'),1:S('05:00','12:00','Fournil'),2:S('05:00','12:00','Fournil'),5:S('05:00','12:00','Fournil'),6:S('05:00','12:00','Fournil')}
   };
   const base=[720,680,760,740,890,1240,1080],sales={};
-  for(let i=1;i<=14;i++){const d=addDays(today,-i),wd=(d.getDay()+6)%7;const ca=Math.round(base[wd]*(0.92+((i*37)%17)/100));sales[k(d)]={ca,tk:Math.round(ca/5.3)};}
+  for(let i=1;i<=120;i++){const d=addDays(today,-i),wd=(d.getDay()+6)%7;const ca=Math.round(base[wd]*(0.92+((i*37)%17)/100));sales[k(d)]={ca,tk:Math.round(ca/5.3)};}
   const mk=(n,h,m)=>{const d=addDays(today,n);d.setHours(h,m);return d.toISOString();};
   return {
     example:true,postes:DEMO_POSTES.map(p=>({...p})),employees:E,weeks:{[k(thisMonday)]:w},
@@ -463,8 +532,26 @@ function seed(){
       {id:uid(),name:'Œufs',unit:'plateaux de 30',qty:4,min:6,supplier:'Ferme Bessières'},
       {id:uid(),name:'Sacs kraft',unit:'paquets',qty:12,min:5,supplier:'Metro'}
     ],
-    sales
+    sales,
+    settings:{charges:42,goal:26000,tempHour:10,notify:false},
+    punches:seedPunches(w),
+    losses:[
+      {id:uid(),date:k(addDays(today,-1)),product:'Baguette tradition',qty:14,reason:'Invendu',value:15.4},
+      {id:uid(),date:k(addDays(today,-1)),product:'Croissant',qty:9,reason:'Invendu',value:10.8},
+      {id:uid(),date:k(addDays(today,-2)),product:'Flan pâtissier (part)',qty:6,reason:'Invendu',value:16.8},
+      {id:uid(),date:k(addDays(today,-3)),product:'Crème fraîche',qty:2,reason:'Périmé',value:7.2},
+      {id:uid(),date:k(addDays(today,-4)),product:'Baguette tradition',qty:11,reason:'Invendu',value:12.1}
+    ],
+    templates:[{id:'tpl-normale',name:'Semaine normale',data:JSON.parse(JSON.stringify(w))}]
   };
+}
+function seedPunches(w){
+  const out=[],di=(today.getDay()+6)%7;let n=0;
+  const at=m=>{const d=new Date(today);d.setHours(0,m,0,0);return d.toISOString();};
+  Object.entries(w).forEach(([eid,days])=>{const x=days[di];if(!x)return;const st=mins(x.s),en=mins(x.e),late=(n++===1)?12:-3;
+    if(nowMin()>st+late)out.push({id:uid(),emp:eid,kind:'in',at:at(st+late)});
+    if(en>st&&nowMin()>en+2)out.push({id:uid(),emp:eid,kind:'out',at:at(en+2)});});
+  return out;
 }
 function emptyState(name){
   return {shop:name,postes:[{name:'Production',color:0},{name:'Vente',color:2},{name:'Nettoyage',color:3}],employees:[],weeks:{},leaves:[],notes:[],
@@ -473,26 +560,49 @@ function emptyState(name){
       {id:uid(),name:'Fermeture',items:[{id:uid(),text:'Nettoyer les plans de travail'},{id:uid(),text:'Noter les invendus'},{id:uid(),text:'Compter la caisse'},{id:uid(),text:"Activer l'alarme"}]}
     ],
     done:{},equipments:[{name:'Chambre froide',min:0,max:4},{name:'Vitrine réfrigérée',min:0,max:4},{name:'Congélateur',min:-30,max:-18}],
-    temps:[],stock:[],sales:{}};
+    temps:[],stock:[],sales:{},settings:{charges:42,goal:0,tempHour:10,notify:false},punches:[],losses:[],templates:[]};
 }
-function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});['postes','employees','leaves','notes','temps','stock','lists','equipments'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
+function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});s.settings=Object.assign({},e.settings,(d&&d.settings)||{});['postes','employees','leaves','notes','temps','stock','lists','equipments','punches','losses','templates'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
 
 const CFG=window.MONKIOSK_CONFIG||{};
-let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false;
+let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false,editSeq=0,base=null,eView=null,memberships=[],members=[],joinCode='';
 const cacheKey=()=>'monkiosk-cache-'+(company?company.id:'x');
 function readCache(){try{const r=localStorage.getItem(cacheKey());return r?JSON.parse(r):null;}catch(e){return null;}}
 function setSync(st){const m={ok:['Synchronisé','ok'],saving:['Enregistrement…','info'],error:['Non synchronisé','crit'],offline:['Hors ligne','warn'],demo:['Démo','warn']}[st];const el=$('sync');el.textContent=m[0];el.className='chip '+m[1];}
 function save(){
-  if(mode==='demo')return;
+  if(mode!=='cloud')return;
   try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
-  dirty=true;setSync('saving');clearTimeout(saveTimer);saveTimer=setTimeout(pushRemote,600);
+  dirty=true;editSeq++;setSync('saving');clearTimeout(saveTimer);saveTimer=setTimeout(pushRemote,600);
+}
+const clone=o=>JSON.parse(JSON.stringify(o));
+const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
+// Fusionne les changements des autres appareils (server) avec les miens (local), à partir de la dernière version commune (base).
+function merge3(b,l,sv){
+  if(Array.isArray(l)&&Array.isArray(sv)&&l.every(x=>isObj(x)&&x.id)&&sv.every(x=>isObj(x)&&x.id)){
+    const bIds=new Set((Array.isArray(b)?b:[]).map(x=>x&&x.id)),lIds=new Set(l.map(x=>x.id));
+    return l.concat(sv.filter(x=>!lIds.has(x.id)&&!bIds.has(x.id)));
+  }
+  if(isObj(l)&&isObj(sv)){
+    const out=Object.assign({},l),bb=isObj(b)?b:{};
+    Object.keys(sv).forEach(key=>{if(!(key in l)){if(!(key in bb))out[key]=sv[key];}else out[key]=merge3(bb[key],l[key],sv[key]);});
+    return out;
+  }
+  return l;
 }
 async function pushRemote(){
-  if(!sb||!company)return;
-  saving=true;const at=new Date().toISOString();lastLocalSave=at;
+  if(!sb||!company||mode!=='cloud')return;
+  saving=true;const seq=editSeq;
   try{
-    const {error}=await sb.from('company_data').update({data:state,updated_at:at,updated_by:user.id}).eq('company_id',company.id);
-    if(error)throw error;remoteAt=at;dirty=false;setSync('ok');
+    const {data:srv,error:e1}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
+    if(e1)throw e1;
+    if(srv&&srv.data&&srv.data.employees&&remoteAt&&Date.parse(srv.updated_at)>Date.parse(remoteAt)){
+      state=normalize(merge3(base,state,srv.data),company.name);render();
+    }
+    const at=new Date().toISOString();lastLocalSave=at;const snap=clone(state);
+    const {error}=await sb.from('company_data').update({data:snap,updated_at:at,updated_by:user.id}).eq('company_id',company.id);
+    if(error)throw error;
+    remoteAt=at;base=snap;dirty=editSeq!==seq;setSync(dirty?'saving':'ok');
+    try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
   }catch(e){setSync(navigator.onLine?'error':'offline');}
   saving=false;
 }
@@ -531,6 +641,7 @@ function pendingLeaves(){return state.leaves.filter(l=>l.status==='attente');}
 function homeAlerts(){
   const a=[];
   todayTemps().filter(t=>!tempOk(t)).forEach(t=>{const eq=state.equipments.find(e=>e.name===t.equip);a.push({lvl:'crit',tag:'Hygiène',txt:`<b>${esc(t.equip)}</b> à ${num(t.val)} °C. Elle doit rester entre ${eq.min} et ${eq.max} °C.`,go:'taches'});});
+  reminders().forEach(x=>a.push(x));
   analyse(thisMonday).out.forEach(x=>a.push(x));
   pendingLeaves().forEach(l=>a.push({lvl:'warn',tag:'Congés',txt:`<b>${esc(empName(l.emp))}</b> demande ${l.type.toLowerCase()} du ${fmtDM.format(fromKey(l.from))} au ${fmtDM.format(fromKey(l.to))}.`,go:'equipe'}));
   const low=lowStock();if(low.length)a.push({lvl:'warn',tag:'Stock',txt:`${low.length} article${low.length>1?'s':''} sous le seuil : ${low.map(s=>esc(s.name)).join(', ')}.`,go:'stock'});
@@ -599,6 +710,8 @@ function renderPlanning(){
   });
   h+='</tbody><tfoot><tr><th class="sticky">Présents</th>'+present.map(n=>`<td>${n}</td>`).join('')+'<td></td></tr></tfoot>';
   $('grid').innerHTML=h;
+  {const hrs=Object.values(totals).reduce((p,c)=>p+c,0),gross=state.employees.reduce((p,e)=>p+(totals[e.id]||0)/60*(e.rate||0),0),ch=state.settings.charges||0;
+   $('plan-cost').innerHTML=`Heures planifiées : <strong>${fh(hrs)}</strong>`+(hasRates()?` · Coût estimé : <strong>${eur.format(gross*(1+ch/100))}</strong> <span class="muted">(salaires bruts ${eur.format(gross)} + charges ${ch} %)</span>`:` · <span class="muted">Ajoute le taux horaire de tes salariés pour voir le coût du planning.</span>`);}
   $('legend-postes').innerHTML=postes().map(p=>`<span class="pc${p.color}">${esc(p.name)}</span>`).join('');
   const sel=$('share-emp'),cur=sel.value;
   sel.innerHTML=state.employees.map(e=>`<option value="${e.id}">${esc(e.name)}</option>`).join('');
@@ -626,7 +739,9 @@ function renderTeam(){
   const N=[...state.notes].sort((a,b)=>b.date.localeCompare(a.date));
   $('notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}</p><button type="button" class="x" data-delnote="${n.id}" aria-label="Supprimer l'annonce">×</button></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
   const tot=analyse(thisMonday).totals;
-  $('staff').innerHTML=state.employees.map(e=>`<li><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
+  $('staff').innerHTML=state.employees.map(e=>{const acc=members.some(m=>m.employee_id===e.id);const wk=weekWorked(e.id);
+    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
+  renderPunches();renderAccounts();
 }
 function renderPostes(){
   const used={};Object.values(state.weeks).forEach(w=>Object.values(w).forEach(d=>Object.values(d).forEach(x=>{used[x.p]=(used[x.p]||0)+1;})));
@@ -675,6 +790,9 @@ function renderSales(){
   if(avg)svg+=`<line class="avg" x1="${L}" x2="${W-R}" y1="${y(avg)}" y2="${y(avg)}"/>`;
   svg+='</svg>';
   $('sales-chart').innerHTML=svg;
+  {let cost=0;for(let i=1;i<=7;i++)cost+=dayCost(addDays(today,-i));const r=a.ca?Math.round(cost/a.ca*100):0;
+   $('sales-kpis').insertAdjacentHTML('beforeend',`<div class="kpi"><span class="muted small">Masse salariale / CA (7 j)</span><span class="big">${hasRates()&&a.ca?r+' %':'—'}</span><span class="muted small">${hasRates()?eur.format(cost)+' estimés':'Ajoute les taux horaires'}</span></div>`);}
+  renderMonthly();renderLosses();
 }
 
 /* ---------- Sheets ---------- */
@@ -694,7 +812,8 @@ function openEmp(id){
   openSheet(`<h2>${emp?'Modifier '+esc(emp.name):'Nouveau salarié'}</h2>
   <label>Prénom<input type="text" id="f-name" value="${emp?esc(emp.name):''}" placeholder="Ex. Camille"></label>
   <div class="two"><label>Poste principal<select id="f-poste">${postes().map(o=>o.name).map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
-  <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
+  <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>
+  <label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
 }
 function openPoste(i){
   const p=i==null?null:postes()[i];const used=new Set(postes().map(x=>x.color));
@@ -720,6 +839,11 @@ function openStock(id){
   <label>Fournisseur<input type="text" id="f-ssup" value="${s?esc(s.supplier):''}" placeholder="Ex. Metro"></label>${actions(s?"Supprimer l'article":'')}`,{type:'stock',id},'f-sname');
 }
 sheet.addEventListener('click',ev=>{
+  const ta=ev.target.closest('[data-tplapply]');
+  if(ta){const t=state.templates.find(x=>x.id===ta.dataset.tplapply);if(t){const ids=new Set(state.employees.map(e=>e.id));const d={};Object.entries(clone(t.data)).forEach(([id,v])=>{if(ids.has(id))d[id]=v;});
+    state.weeks[k(weekStart)]=d;toast(`« ${t.name} » appliquée`);commit();closeSheet();}return;}
+  const td=ev.target.closest('[data-tpldel]');
+  if(td){state.templates=state.templates.filter(x=>x.id!==td.dataset.tpldel);commit();openTemplates();return;}
   const sw=ev.target.closest('[data-color]');
   if(sw){ctx.color=+sw.dataset.color;sheet.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',b===sw));return;}
   const p=ev.target.closest('[data-p]');
@@ -735,6 +859,10 @@ sheet.addEventListener('click',ev=>{
 });
 sheet.addEventListener('submit',ev=>{
   ev.preventDefault();
+  if(ctx.type==='register'){const m=$('f-month').value;closeSheet();if(m)setTimeout(()=>printRegister(m),80);return;}
+  if(ctx.type==='tpl'){const name=$('f-tname').value.trim();if(!name)return toast('Donne un nom à cette semaine type');
+    const wk=state.weeks[k(weekStart)]||{};if(!Object.values(wk).some(d=>Object.keys(d).length))return toast('La semaine affichée est vide');
+    state.templates.push({id:uid(),name,data:clone(wk)});toast('Semaine type enregistrée');commit();closeSheet();return;}
   if(ctx.type==='shift'){
     const s=$('f-s').value,e=$('f-e').value;
     if(!s||!e||s===e)return toast('Indique une heure de début et de fin différentes');
@@ -743,8 +871,9 @@ sheet.addEventListener('submit',ev=>{
   }else if(ctx.type==='emp'){
     const name=$('f-name').value.trim();if(!name)return toast('Indique un prénom');
     const contract=Math.max(1,Math.min(48,parseInt($('f-contract').value,10)||35));
-    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract});
-    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract});
+    const rate=Math.max(0,parseFloat($('f-rate').value)||0);
+    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate});
+    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate});
     toast('Équipe mise à jour');
   }else if(ctx.type==='leave'){
     if(!state.employees.length)return toast("Ajoute d'abord un salarié");
@@ -764,7 +893,11 @@ sheet.addEventListener('submit',ev=>{
     const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
     state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;
     if(company.role==='owner')sb.from('companies').update({name}).eq('id',company.id).then(()=>{});
-    toast('Commerce renommé');
+    const ms=memberships.find(x=>x.id===company.id);if(ms)ms.name=name;
+    const notify=$('f-notify').checked;
+    state.settings=Object.assign({},state.settings,{charges:Math.max(0,Math.min(100,parseFloat($('f-charges').value)||0)),goal:Math.max(0,parseFloat($('f-goal').value)||0),tempHour:+$('f-hour').value,notify});
+    if(notify&&'Notification' in window&&Notification.permission==='default')Notification.requestPermission().then(()=>notifyLoop());
+    toast('Réglages enregistrés');
   }else if(ctx.type==='stock'){
     const name=$('f-sname').value.trim();if(!name)return toast("Indique le nom de l'article");
     const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur'};
@@ -792,6 +925,9 @@ document.addEventListener('click',ev=>{
   if(ds.emp)return openEmp(ds.emp);
   if(ds.stock)return openStock(ds.stock);
   if(ds.poste!=null)return openPoste(+ds.poste);
+  if(ds.punch){const[e,kind]=ds.punch.split(':');state.punches.push({id:uid(),emp:e,kind,at:new Date().toISOString()});toast(kind==='in'?`Arrivée de ${empName(e)} enregistrée`:`Départ de ${empName(e)} enregistré`);return commit();}
+  if(ds.delloss){state.losses=state.losses.filter(l=>l.id!==ds.delloss);return commit();}
+  if(ds.unlink){removeMember(ds.unlink);return;}
   if(ds.delta){const[id,dl]=ds.delta.split(':');const s=state.stock.find(x=>x.id===id);s.qty=Math.max(0,Math.round((s.qty+Number(dl))*10)/10);return commit();}
   if(ds.leaveOk){state.leaves.find(l=>l.id===ds.leaveOk).status='validé';toast('Congé validé');return commit();}
   if(ds.leaveNo){state.leaves.find(l=>l.id===ds.leaveNo).status='refusé';toast('Demande refusée');return commit();}
@@ -832,14 +968,240 @@ let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
 if(framed){$('export').hidden=true;$('export-note').hidden=false;}
 const h=(location.hash||'').slice(1);if(VIEWS[h])view=h;
 
+/* ---------- Temps, pointage et coûts ---------- */
+const hm=iso=>new Date(iso).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+const localMin=iso=>{const d=new Date(iso);return d.getHours()*60+d.getMinutes();};
+function nowMin(){const d=new Date();return d.getHours()*60+d.getMinutes();}
+function hasRates(){return state.employees.some(e=>e.rate>0);}
+function dayCost(d){const w=state.weeks[k(monday(d))]||{},di=(d.getDay()+6)%7;let c=0;
+  state.employees.forEach(e=>{const x=(w[e.id]||{})[di];if(x)c+=dur(x.s,x.e)/60*(e.rate||0);});
+  return c*(1+(state.settings.charges||0)/100);}
+function punchesOf(list,emp,key){return list.filter(p=>p.emp===emp&&k(new Date(p.at))===key).sort((a,b)=>a.at.localeCompare(b.at));}
+function workedMin(ps){let t=0,st=null;ps.forEach(p=>{if(p.kind==='in')st=new Date(p.at);else if(st){t+=(new Date(p.at)-st)/60000;st=null;}});
+  if(st&&k(st)===todayKey)t+=(Date.now()-st)/60000;return Math.max(0,Math.round(t));}
+function weekWorked(emp){let t=0;for(let d=0;d<7;d++)t+=workedMin(punchesOf(state.punches,emp,k(addDays(thisMonday,d))));return t;}
+function renderPunches(){
+  const lbl=fmtFull.format(today);$('punch-date').textContent=lbl.charAt(0).toUpperCase()+lbl.slice(1);
+  const di=(today.getDay()+6)%7,w=state.weeks[k(thisMonday)]||{};
+  const rows=state.employees.map(e=>({e,x:(w[e.id]||{})[di],ps:punchesOf(state.punches,e.id,todayKey)})).filter(r=>r.x||r.ps.length);
+  $('punches').innerHTML=rows.length?rows.map(({e,x,ps})=>{
+    const last=ps[ps.length-1],inNow=last&&last.kind==='in',first=ps.find(p=>p.kind==='in');
+    let chip;
+    if(!ps.length)chip=x&&nowMin()>mins(x.s)+5?'<span class="chip crit">Pas arrivé</span>':'<span class="chip info">Attendu</span>';
+    else chip=inNow?'<span class="chip ok">En poste</span>':'<span class="chip info">Parti</span>';
+    let late='';if(first&&x){const diff=localMin(first.at)-mins(x.s);if(diff>5)late=`<span class="chip warn">Retard ${diff} min</span>`;}
+    const times=ps.map(p=>(p.kind==='in'?'arrivée ':'départ ')+hm(p.at)).join(' · ');
+    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">${x?'Prévu '+x.s+'–'+x.e:'Non planifié'}${times?' · '+times:''}${ps.length?' · '+fh(workedMin(ps)):''}</span></span>${chip}${late}<button type="button" class="btn sm ${inNow?'':'primary'}" data-punch="${e.id}:${inNow?'out':'in'}">${inNow?'Départ':'Arrivée'}</button></li>`;
+  }).join(''):'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
+}
+
+/* ---------- Comptes salariés (côté patron) ---------- */
+async function loadMembers(){
+  if(mode!=='cloud'||!sb||!company)return;
+  const [r1,r2]=await Promise.all([sb.rpc('company_members',{cid:company.id}),sb.from('companies').select('join_code').eq('id',company.id).single()]);
+  members=r1.error?[]:(r1.data||[]);joinCode=(r2.data&&r2.data.join_code)||'';
+  if(r1.error)joinCode='';
+  renderAccounts();renderTeam();
+}
+function renderAccounts(){
+  const card=$('accounts-card');card.hidden=mode!=='cloud'||!company||company.role!=='owner';if(card.hidden)return;
+  $('join-code').textContent=joinCode||'—';
+  const emps=members.filter(m=>m.role==='employee');
+  $('members').innerHTML=!joinCode?'<li class="empty-note">Lance le fichier migration-1.4.sql dans Supabase pour activer les comptes salariés.</li>':
+    emps.length?emps.map(m=>`<li><span class="grow"><strong>${esc(empName(m.employee_id))}</strong><span class="muted small">${esc(m.email)}</span></span><button type="button" class="btn sm danger" data-unlink="${m.user_id}">Retirer l'accès</button></li>`).join(''):'<li class="empty-note">Aucun salarié connecté pour l\'instant.</li>';
+}
+async function removeMember(uid){const {error}=await sb.rpc('remove_member',{cid:company.id,uid});if(error)return toast(frError(error));toast('Accès retiré');loadMembers();}
+$('copy-code').onclick=()=>{if(!joinCode)return;try{navigator.clipboard.writeText(joinCode).then(()=>toast('Code copié'),()=>toast('Code : '+joinCode));}catch(e){toast('Code : '+joinCode);}};
+$('regen-code').onclick=async()=>{const {data,error}=await sb.rpc('regenerate_join_code',{cid:company.id});if(error)return toast(frError(error));joinCode=data;renderAccounts();toast("Nouveau code créé. L'ancien ne fonctionne plus.");};
+
+/* ---------- Ventes : mois et pertes ---------- */
+const fmtMonth=new Intl.DateTimeFormat('fr-FR',{month:'short'});
+function renderMonthly(){
+  const months=[];for(let i=11;i>=0;i--){const d=new Date(today.getFullYear(),today.getMonth()-i,1);months.push({key:k(d).slice(0,7),d,ca:0});}
+  Object.entries(state.sales).forEach(([key,v])=>{const m=months.find(x=>x.key===key.slice(0,7));if(m)m.ca+=v.ca||0;});
+  const cur=months[11],goal=state.settings.goal||0,dim=new Date(today.getFullYear(),today.getMonth()+1,0).getDate(),elapsed=today.getDate()-1;
+  const proj=elapsed>0&&cur.ca?cur.ca/elapsed*dim:0;
+  const max=Math.max(1000,Math.ceil(Math.max(...months.map(m=>m.ca),goal)/5000)*5000);
+  const W=640,H=220,L=56,Rr=10,T=12,B=28,cw=(W-L-Rr)/12,bw=cw*0.6,y=v=>T+(H-T-B)*(1-v/max);
+  let svg=`<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Chiffre d'affaires par mois">`;
+  [0,max/2,max].forEach(v=>{svg+=`<line class="gl" x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${num(v/1000,1)} k€</text>`;});
+  months.forEach((m,i)=>{const cx=L+cw*i+cw/2;if(m.ca)svg+=`<rect class="b ${i===11?'we':''}" x="${cx-bw/2}" y="${y(m.ca)}" width="${bw}" height="${y(0)-y(m.ca)}" rx="3"><title>${m.key} : ${eur.format(m.ca)}</title></rect>`;
+    svg+=`<text x="${cx}" y="${H-9}" text-anchor="middle">${fmtMonth.format(m.d).replace('.','')}</text>`;});
+  if(goal)svg+=`<line class="avg" x1="${L}" x2="${W-Rr}" y1="${y(goal)}" y2="${y(goal)}"/>`;
+  svg+='</svg>';
+  const pct=goal?Math.round(cur.ca/goal*100):0;
+  $('month-box').innerHTML=`<div class="kpis">
+    <div class="kpi"><span class="muted small">Ce mois-ci</span><span class="big">${eur.format(cur.ca)}</span>${goal?`<div class="bar"><span style="width:${Math.min(100,pct)}%"></span></div><span class="muted small">${pct} % de l'objectif de ${eur.format(goal)}</span>`:'<span class="muted small">Fixe un objectif mensuel dans Compte</span>'}</div>
+    <div class="kpi"><span class="muted small">Projection fin de mois</span><span class="big">${proj?eur.format(proj):'—'}</span>${goal&&proj?`<span class="delta ${proj>=goal?'up':'down'}">${proj>=goal?'Objectif atteignable':"En dessous de l'objectif"}</span>`:''}</div>
+    <div class="kpi"><span class="muted small">Mois précédent</span><span class="big">${eur.format(months[10].ca)}</span></div></div>`+svg+(goal?'<span class="muted small">Pointillés : objectif mensuel</span>':'');
+}
+function renderLosses(){
+  if(!$('l-date').value)$('l-date').value=todayKey;
+  const since=k(addDays(today,-30)),recent=state.losses.filter(l=>l.date>=since);
+  const val=recent.reduce((p,l)=>p+(l.value||0),0);let ca=0;for(let i=1;i<=30;i++){const v=state.sales[k(addDays(today,-i))];if(v)ca+=v.ca;}
+  const byP={};recent.forEach(l=>{byP[l.product]=(byP[l.product]||0)+(l.value||0);});const top=Object.entries(byP).sort((a,b)=>b[1]-a[1])[0];
+  $('loss-kpis').innerHTML=`<div class="kpi"><span class="muted small">Pertes sur 30 jours</span><span class="big">${eur.format(val)}</span></div>
+    <div class="kpi"><span class="muted small">Part du chiffre d'affaires</span><span class="big">${ca?num(val/ca*100,1)+' %':'—'}</span></div>
+    <div class="kpi"><span class="muted small">Produit le plus perdu</span><span class="big" style="font-size:1.25rem">${top?esc(top[0]):'—'}</span>${top?`<span class="muted small">${eur.format(top[1])}</span>`:''}</div>`;
+  $('l-prods').innerHTML=[...new Set(state.losses.map(l=>l.product))].map(x=>`<option value="${esc(x)}">`).join('');
+  const L=[...state.losses].sort((a,b)=>b.date.localeCompare(a.date));
+  $('losses').innerHTML=L.slice(0,8).map(l=>`<li><span class="grow"><strong>${esc(l.product)} · ${num(l.qty)}</strong><span class="muted small">${fmtShort.format(fromKey(l.date))} · ${esc(l.reason)}</span></span><span class="qty small">${eur2.format(l.value||0)}</span><button type="button" class="x" data-delloss="${l.id}" aria-label="Supprimer">×</button></li>`).join('')||'<li class="empty-note">Aucune perte enregistrée.</li>';
+}
+$('l-add').onclick=()=>{const date=$('l-date').value,product=$('l-prod').value.trim(),qty=parseFloat($('l-qty').value)||0,value=Math.max(0,parseFloat($('l-val').value)||0);
+  if(!date||!product)return toast('Indique la date et le produit');
+  state.losses.push({id:uid(),date,product,qty,reason:$('l-reason').value,value});$('l-prod').value='';$('l-qty').value='';$('l-val').value='';toast('Perte enregistrée');commit();};
+
+/* ---------- Rappels et notifications ---------- */
+function reminders(){
+  const r=[];if(!state||mode==='employee')return r;const hr=new Date().getHours(),h0=state.settings.tempHour||10;
+  if(hr>=h0&&state.equipments.length&&!todayTemps().length)r.push({key:'temp',lvl:'warn',tag:'Rappel',txt:"Les températures n'ont pas encore été relevées aujourd'hui.",go:'taches'});
+  const ouv=state.lists[0];if(ouv&&hr>=h0){const dn=state.done[todayKey]||{},left=ouv.items.filter(i=>!dn[i.id]).length;
+    if(left)r.push({key:'open',lvl:'warn',tag:'Rappel',txt:`${left} tâche${left>1?'s':''} « ${esc(ouv.name)} » pas encore cochée${left>1?'s':''}.`,go:'taches'});}
+  return r;
+}
+function notifyLoop(){
+  if(mode!=='cloud'||!state||!state.settings.notify||!('Notification' in window)||Notification.permission!=='granted')return;
+  let sent={};try{sent=JSON.parse(localStorage.getItem('monkiosk-notified')||'{}');}catch(e){}
+  if(sent.day!==k(new Date()))sent={day:k(new Date())};
+  const items=reminders().map(r=>({key:r.key,txt:r.txt.replace(/<[^>]+>/g,'')}));
+  const low=lowStock();if(low.length)items.push({key:'stock'+low.length,txt:`À commander : ${low.map(x=>x.name).join(', ')}`});
+  const pend=pendingLeaves();if(pend.length)items.push({key:'leaves'+pend.length,txt:`${pend.length} demande${pend.length>1?'s':''} de congé à traiter`});
+  items.forEach(it=>{if(sent[it.key])return;try{new Notification('MonKiosk',{body:it.txt,icon:'icons/icon-192.png'});}catch(e){}sent[it.key]=true;});
+  try{localStorage.setItem('monkiosk-notified',JSON.stringify(sent));}catch(e){}
+}
+setInterval(notifyLoop,10*60*1000);
+
+/* ---------- Impression : planning et registre ---------- */
+function printHTML(html){$('print-area').innerHTML=html;setTimeout(()=>window.print(),50);}
+function printPlanning(){
+  const w=state.weeks[k(weekStart)]||{},{totals}=analyse(weekStart);
+  let rows='';state.employees.forEach(e=>{const sh=w[e.id]||{};rows+=`<tr><td><strong>${esc(e.name)}</strong></td>`;
+    for(let d=0;d<7;d++){const x=sh[d],lv=leaveOn(e.id,k(addDays(weekStart,d)));rows+=`<td>${x?`${x.s}–${x.e}<br><small>${esc(x.p)}</small>`:lv?esc(lv.type):'Repos'}</td>`;}
+    rows+=`<td>${fh(totals[e.id]||0)}</td></tr>`;});
+  printHTML(`<h1>${esc(state.shop||'')} · Planning</h1><p>Semaine du ${fmtDM.format(weekStart)} au ${fmtDM.format(addDays(weekStart,6))}</p>
+  <table><thead><tr><th>Salarié</th>${DAYS.map((d,i)=>`<th>${d} ${fmtDay.format(addDays(weekStart,i))}</th>`).join('')}<th>Total</th></tr></thead><tbody>${rows||'<tr><td colspan="9">Aucun salarié.</td></tr>'}</tbody></table>
+  <p style="font-size:8pt;margin-top:8px">Imprimé le ${fmtDM.format(new Date())} avec MonKiosk</p>`);
+}
+function printRegister(month){
+  const [y,m]=month.split('-').map(Number),dim=new Date(y,m,0).getDate();
+  const T=state.temps.filter(t=>k(new Date(t.at)).slice(0,7)===month).sort((a,b)=>a.at.localeCompare(b.at));
+  const rows=[];for(let d=1;d<=dim;d++){const dt=new Date(y,m-1,d);if(dt>today)break;const dn=state.done[k(dt)]||{};
+    rows.push(`<tr><td>${fmtShort.format(dt)}</td>${state.lists.map(l=>{const ok=l.items.filter(i=>dn[i.id]).length,miss=l.items.filter(i=>!dn[i.id]);
+      return `<td>${ok} / ${l.items.length}${miss.length&&ok?'<br><small>Non fait : '+miss.map(i=>esc(i.text)).join(', ')+'</small>':''}</td>`;}).join('')}</tr>`);}
+  const label=new Intl.DateTimeFormat('fr-FR',{month:'long',year:'numeric'}).format(new Date(y,m-1,1));
+  printHTML(`<h1>${esc(state.shop||'')} · Registre d'hygiène</h1><p>${label.charAt(0).toUpperCase()+label.slice(1)}</p>
+  <h2>Relevés de température</h2>${T.length?`<table><thead><tr><th>Date</th><th>Heure</th><th>Équipement</th><th>Relevé</th><th>Plage autorisée</th><th>Conformité</th></tr></thead><tbody>${T.map(t=>{const eq=state.equipments.find(e=>e.name===t.equip);
+    return `<tr><td>${fmtShort.format(new Date(t.at))}</td><td>${hm(t.at)}</td><td>${esc(t.equip)}</td><td>${num(t.val)} °C</td><td>${eq?eq.min+' à '+eq.max+' °C':'—'}</td><td>${tempOk(t)?'Conforme':'<strong>Hors norme</strong>'}</td></tr>`;}).join('')}</tbody></table>`:'<p>Aucun relevé ce mois-ci.</p>'}
+  <h2>Checklists</h2><table><thead><tr><th>Date</th>${state.lists.map(l=>`<th>${esc(l.name)}</th>`).join('')}</tr></thead><tbody>${rows.join('')||'<tr><td>—</td></tr>'}</tbody></table>
+  <p style="font-size:8pt;margin-top:12px">Document généré le ${fmtDM.format(new Date())} avec MonKiosk.</p><p style="margin-top:18px">Signature du responsable : ______________________</p>`);
+}
+function openTemplates(){
+  openSheet(`<h2>Semaines types</h2>
+  <p class="muted small" style="margin:0">Enregistre un planning qui revient souvent, puis applique-le en un clic sur la semaine affichée.</p>
+  <ul class="list">${state.templates.map(t=>`<li><span class="grow"><strong>${esc(t.name)}</strong><span class="muted small">${Object.keys(t.data).length} salarié${Object.keys(t.data).length>1?'s':''}</span></span><button type="button" class="btn sm primary" data-tplapply="${t.id}">Appliquer</button><button type="button" class="x" data-tpldel="${t.id}" aria-label="Supprimer">×</button></li>`).join('')||'<li class="empty-note">Aucune semaine type pour l\'instant.</li>'}</ul>
+  <label>Enregistrer la semaine affichée sous le nom<input type="text" id="f-tname" placeholder="Ex. Semaine normale, Vacances scolaires"></label>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Fermer</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'tpl'},'f-tname');
+}
+function openRegister(){
+  openSheet(`<h2>Registre d'hygiène</h2><p class="muted small" style="margin:0">Relevés de température et checklists du mois, prêts à imprimer ou à enregistrer en PDF pour un contrôle sanitaire.</p>
+  <label>Mois<input type="month" id="f-month" value="${todayKey.slice(0,7)}"></label>
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Imprimer ou enregistrer en PDF</button></div>`,{type:'register'},'f-month');
+}
+$('tpl-btn').onclick=openTemplates;
+$('print-plan').onclick=printPlanning;
+$('register-btn').onclick=openRegister;
+
+/* ---------- Espace salarié ---------- */
+async function loadEmployee(quiet){
+  if(!quiet)authStep('a-loading');
+  const {data,error}=await sb.rpc('employee_view',{cid:company.id,p_day:todayKey});
+  if(error){if(quiet)return;authStep('a-company');authMsg('a-cmsg',frError(error),'err');return;}
+  mode='employee';eView=data;state={postes:data.postes||[]};
+  if(quiet&&!$('v-employee').hidden){renderEmployee();return;}
+  showEmployee();
+}
+function showEmployee(){
+  $('auth').hidden=true;$('appmain').hidden=false;$('nav').hidden=true;$('example').hidden=true;$('sync').hidden=true;$('account').hidden=false;
+  document.querySelectorAll('.view').forEach(v=>v.hidden=v.id!=='v-employee');
+  $('viewtitle').textContent='Bonjour '+((eView.employee&&eView.employee.name)||'');
+  $('shopname').textContent='MonKiosk · '+(eView.shop||company.name);
+  renderEmployee();
+}
+function renderEmployee(){
+  const e=eView.employee||{},eid=e.id,di=(today.getDay()+6)%7;
+  const shift=(ws,d)=>((eView.weeks[k(ws)]||{})[eid]||{})[d];
+  const lvOn=key=>(eView.leaves||[]).find(l=>l.status==='validé'&&l.from<=key&&l.to>=key);
+  const x=shift(thisMonday,di),lvT=lvOn(todayKey),ps=punchesOf(eView.punches||[],eid,todayKey),inNow=ps.length&&ps[ps.length-1].kind==='in';
+  $('e-today').innerHTML=`<h3>Aujourd'hui</h3>
+    <p style="margin:0;font-size:1.05rem">${x?`Tu travailles de <strong>${x.s}</strong> à <strong>${x.e}</strong> · ${esc(x.p)}`:lvT?`Tu es en ${esc(lvT.type.toLowerCase())}.`:"Tu n'es pas planifié aujourd'hui."}</p>
+    <button type="button" class="btn primary" style="padding:16px;font-size:1.05rem" data-eact="punch" data-kind="${inNow?'out':'in'}">${inNow?'Je termine ma journée':'Je commence ma journée'}</button>
+    ${ps.length?`<p class="muted small" style="margin:0">${ps.map(p=>(p.kind==='in'?'Arrivée ':'Départ ')+hm(p.at)).join(' · ')} · ${fh(workedMin(ps))} travaillées</p>`:''}`;
+  const weekHTML=ws=>{let t=0,rows='';for(let d=0;d<7;d++){const dt=addDays(ws,d),sh=shift(ws,d),lv=lvOn(k(dt));if(sh)t+=dur(sh.s,sh.e);
+      rows+=`<li><span class="grow"><strong>${DAYS_LONG[d]} ${fmtDay.format(dt)}</strong></span>${sh?`<span class="chip ${pcls(sh.p)}">${esc(sh.p)}</span><span class="qty small">${sh.s}–${sh.e}</span>`:lv?`<span class="chip p-leave">${esc(lv.type)}</span>`:'<span class="muted small">Repos</span>'}</li>`;}
+    return `<div class="card-head"><h3>Semaine du ${fmtDM.format(ws)}</h3><span class="muted small">${fh(t)}</span></div><ul class="list">${rows}</ul>`;};
+  $('e-plan').innerHTML=`<h2>Mon planning</h2>`+weekHTML(thisMonday)+weekHTML(addDays(thisMonday,7));
+  const dn=eView.done||{};
+  $('e-tasks').innerHTML=(eView.lists||[]).map(l=>`<div class="card-head" style="margin-top:6px"><strong>${esc(l.name)}</strong><span class="muted small">${l.items.filter(i=>dn[i.id]).length} / ${l.items.length}</span></div>
+    <ul class="list" style="margin-bottom:8px">${l.items.map(i=>`<li><label class="check ${dn[i.id]?'done':''}"><input type="checkbox" data-etask="${i.id}" ${dn[i.id]?'checked':''}><span>${esc(i.text)}</span></label></li>`).join('')}</ul>`).join('')+
+    ((eView.equipments||[]).length?`<h3 style="margin-top:6px">Relevé de température</h3><div class="row"><select id="e-equip" aria-label="Équipement">${eView.equipments.map(q=>`<option>${esc(q.name)}</option>`).join('')}</select><input type="number" id="e-val" step="0.1" placeholder="°C" style="max-width:100px" aria-label="Température"><button type="button" class="btn" data-eact="temp">Enregistrer</button></div>`:'');
+  const L=[...(eView.leaves||[])].sort((a,b)=>b.from.localeCompare(a.from));
+  $('e-leaves').innerHTML=`<ul class="list">${L.map(l=>`<li><span class="grow"><strong>${esc(l.type)}</strong><span class="muted small">${l.from===l.to?'le '+fmtDM.format(fromKey(l.from)):'du '+fmtShort.format(fromKey(l.from))+' au '+fmtShort.format(fromKey(l.to))}</span></span>${l.status==='attente'?'<span class="chip warn">En attente</span>':l.status==='validé'?'<span class="chip ok">Validé</span>':'<span class="chip crit">Refusé</span>'}</li>`).join('')||'<li class="empty-note">Aucune demande pour l\'instant.</li>'}</ul>
+    <h3 style="margin-top:12px">Nouvelle demande</h3>
+    <div class="row"><select id="e-ltype" aria-label="Motif">${LEAVE_TYPES.map(t=>`<option>${t}</option>`).join('')}</select><input type="date" id="e-lfrom" value="${todayKey}" aria-label="Du"><input type="date" id="e-lto" value="${todayKey}" aria-label="Au"><button type="button" class="btn primary" data-eact="leave">Envoyer la demande</button></div>`;
+  const N=[...(eView.notes||[])].sort((a,b)=>b.date.localeCompare(a.date));
+  $('e-notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}</p></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
+}
+async function empAction(action,payload){
+  const {data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:action,p_payload:payload,p_day:todayKey});
+  if(error){toast(frError(error));return false;}
+  eView=data;state={postes:data.postes||[]};renderEmployee();return true;
+}
+document.addEventListener('click',async e2=>{
+  const b=e2.target.closest('[data-eact]');if(!b||mode!=='employee')return;const a=b.dataset.eact;b.disabled=true;
+  if(a==='punch'){if(await empAction('punch',{kind:b.dataset.kind}))toast(b.dataset.kind==='in'?'Bonne journée !':'Journée terminée, à bientôt !');}
+  else if(a==='temp'){const v=parseFloat($('e-val').value);if(isNaN(v))toast('Indique la température relevée');else if(await empAction('temp',{equip:$('e-equip').value,val:v}))toast('Relevé enregistré');}
+  else if(a==='leave'){const from=$('e-lfrom').value,to=$('e-lto').value;if(!from||!to||to<from)toast('La date de fin doit être après la date de début');
+    else if(await empAction('leave',{type:$('e-ltype').value,from,to}))toast('Demande envoyée à ton responsable');}
+  b.disabled=false;
+});
+document.addEventListener('change',e2=>{const c=e2.target;if(mode==='employee'&&c.dataset&&c.dataset.etask)empAction('task',{task:c.dataset.etask,done:c.checked});});
+setInterval(()=>{if(mode==='employee'&&!document.hidden)loadEmployee(true);},60000);
+
+/* ---------- Créer, rejoindre, changer de commerce ---------- */
+let joinPreview=null;
+$('a-join').addEventListener('submit',async e2=>{
+  e2.preventDefault();const code=$('a-code').value.trim().toUpperCase();if(!code)return authMsg('a-jmsg','Saisis le code du commerce.','err');
+  const btn=$('a-jsubmit');btn.disabled=true;
+  try{
+    if(!joinPreview){const {data,error}=await sb.rpc('join_preview',{p_code:code});if(error)return authMsg('a-jmsg',frError(error),'err');
+      if(!data.employees.length)return authMsg('a-jmsg',`Aucune fiche salarié disponible chez ${data.company}. Demande à ton responsable de t'ajouter dans l'équipe.`,'err');
+      joinPreview=data;$('a-jemp').innerHTML=data.employees.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
+      $('a-jwho').hidden=false;btn.textContent=`Rejoindre ${data.company}`;authMsg('a-jmsg','');return;}
+    const {data,error}=await sb.rpc('join_company',{p_code:code,p_employee:$('a-jemp').value});if(error)return authMsg('a-jmsg',frError(error),'err');
+    joinPreview=null;try{localStorage.setItem('monkiosk-company',data);}catch(e){}await afterLogin();
+  }finally{btn.disabled=false;}
+});
+$('a-code').addEventListener('input',()=>{joinPreview=null;$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';});
+document.addEventListener('click',e2=>{
+  const t=e2.target.closest('[data-joinco],[data-newco],[data-back],[data-switch]');if(!t)return;
+  if(!overlay.hidden)closeSheet();
+  if('joinco' in t.dataset){joinPreview=null;$('a-code').value='';$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';authMsg('a-jmsg','');authStep('a-join');$('a-code').focus();}
+  else if('newco' in t.dataset){authMsg('a-cmsg','');$('a-cname').value='';authStep('a-company');$('a-cname').focus();}
+  else if('back' in t.dataset){if(company&&(mode==='employee'||state&&state.employees))mode==='employee'?showEmployee():showApp();else authStep('a-company');}
+  else if(t.dataset.switch){const m=memberships.find(x=>x.id===t.dataset.switch);if(m)openCompany(m);}
+});
+
 /* ---------- Comptes et synchronisation ---------- */
 let signup=false;
 function authStep(step){
   $('appmain').hidden=true;$('nav').hidden=true;$('auth').hidden=false;
-  ['a-loading','a-login','a-company','a-config'].forEach(id=>$(id).hidden=id!==step);
+  ['a-loading','a-login','a-company','a-config','a-join'].forEach(id=>$(id).hidden=id!==step);
+  $('a-cback').hidden=!company;
 }
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
+  if(/Could not find the function|function .* does not exist|schema cache/i.test(m))return 'La base de données doit être mise à jour : lance le fichier migration-1.4.sql dans Supabase.';
+  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas)/.test(m))return m+'.';
   if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
   if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
   if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
@@ -850,7 +1212,7 @@ function frError(e){const m=(e&&e.message)||'';
 function showApp(){
   $('auth').hidden=true;$('appmain').hidden=false;$('nav').hidden=false;
   $('shopname').textContent='MonKiosk · '+(state.shop||(company&&company.name)||'Démo');
-  $('account').hidden=mode==='demo';
+  $('account').hidden=mode==='demo';$('sync').hidden=false;
   render();
 }
 async function boot(){
@@ -865,9 +1227,16 @@ async function afterLogin(){
   const {data,error}=await sb.from('members').select('company_id,role,companies(name)').eq('user_id',user.id).order('created_at');
   if(error){const last=localStorage.getItem('monkiosk-last-company');if(last){company=JSON.parse(last);const c=readCache();if(c){state=normalize(c,company.name);setSync('offline');showApp();return;}}
     authStep('a-login');authMsg('a-msg',frError(error),'err');return;}
-  if(!data.length){authStep('a-company');$('a-cname').focus();return;}
-  const m=data[0];company={id:m.company_id,name:(m.companies&&m.companies.name)||'Mon commerce',role:m.role};
-  await loadCompany();
+  memberships=data.map(m=>({id:m.company_id,name:(m.companies&&m.companies.name)||'Mon commerce',role:m.role}));
+  if(!memberships.length){authStep('a-company');$('a-cname').focus();return;}
+  let pref=null;try{pref=localStorage.getItem('monkiosk-company');}catch(e){}
+  await openCompany(memberships.find(m=>m.id===pref)||memberships[0]);
+}
+async function openCompany(m){
+  company=Object.assign({},m);try{localStorage.setItem('monkiosk-company',m.id);}catch(e){}
+  if(sb)sb.removeAllChannels();
+  pendingRemote=null;dirty=false;remoteAt=null;base=null;members=[];joinCode='';
+  if(m.role==='employee')await loadEmployee();else{mode='cloud';await loadCompany();}
 }
 async function loadCompany(){
   try{localStorage.setItem('monkiosk-last-company',JSON.stringify(company));}catch(e){}
@@ -875,17 +1244,17 @@ async function loadCompany(){
   if(error){const c=readCache();if(c){state=normalize(c,company.name);setSync('offline');showApp();return;}
     authStep('a-login');authMsg('a-msg',frError(error),'err');return;}
   const fresh=!data.data||!data.data.employees;
-  state=normalize(fresh?null:data.data,company.name);remoteAt=data.updated_at;
+  state=normalize(fresh?null:data.data,company.name);remoteAt=data.updated_at;base=clone(state);
   showApp();
   if(fresh)pushRemote();else setSync('ok');
-  subscribe();
+  subscribe();loadMembers();setTimeout(notifyLoop,4000);
 }
 function applyRemote(row){
   if(!row||!row.data||!row.data.employees)return;
   const t=Date.parse(row.updated_at);
   if((lastLocalSave&&t===Date.parse(lastLocalSave))||(remoteAt&&t<=Date.parse(remoteAt)))return;
   if(!overlay.hidden||saving||dirty){pendingRemote=row;return;}
-  remoteAt=row.updated_at;state=normalize(row.data,company.name);
+  remoteAt=row.updated_at;state=normalize(row.data,company.name);base=clone(row.data);
   try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
   render();toast('Mis à jour depuis un autre appareil');
 }
@@ -895,6 +1264,7 @@ function subscribe(){
     .subscribe();
 }
 async function refresh(){
+  if(mode==='employee'&&sb&&company){loadEmployee(true);return;}
   if(mode!=='cloud'||!sb||!company||saving||dirty)return;
   const {data}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
   if(data)applyRemote(data);
@@ -929,18 +1299,26 @@ $('a-company').addEventListener('submit',async ev=>{
   if(!name)return authMsg('a-cmsg','Indique le nom de ton commerce.','err');
   const {data,error}=await sb.rpc('create_company',{p_name:name});
   if(error)return authMsg('a-cmsg',frError(error),'err');
-  company={id:data,name,role:'owner'};await loadCompany();
+  const m={id:data,name,role:'owner'};memberships.push(m);await openCompany(m);
 });
 $('a-demo').onclick=()=>{mode='demo';state=seed();state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
 document.addEventListener('click',async ev=>{if(ev.target.closest('[data-logout]')){if(sb)await sb.auth.signOut();try{localStorage.removeItem('monkiosk-last-company');}catch(e){}location.reload();}});
 $('w-team').onclick=()=>openEmp(null);
 $('account').onclick=()=>{
+  const owner=mode==='cloud'&&company&&company.role!=='employee',st=owner?state.settings:null;
+  const hours=[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st&&st.tempHour===h?'selected':''}>${h} h</option>`).join('');
+  const cos=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${m.role==='employee'?'Salarié':'Responsable'}</span></span>${company&&m.id===company.id?'<span class="chip ok">Ouvert</span>':`<button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button>`}</li>`).join('');
   openSheet(`<h2>Mon compte</h2>
   <p class="muted small" style="margin:0">Connecté en tant que <strong>${esc(user?user.email:'')}</strong></p>
-  <label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
-  ${window.monkioskDesktop?`<div class="note" style="flex-wrap:wrap;align-items:center"><p><time>Application Windows</time><span id="upd-text">Version ${esc(desktopVersion)} · ${updLabel()}</span></p><button type="button" class="btn sm" id="upd-btn">${updState.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour'}</button></div>`:''}
-  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'account'},'f-shop');
+  ${owner?`<label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
+  <div class="two"><label>Charges patronales (%)<input type="number" id="f-charges" min="0" max="100" step="1" value="${st.charges}"></label><label>Objectif mensuel (€)<input type="number" id="f-goal" min="0" step="100" value="${st.goal||''}" placeholder="Ex. 25000"></label></div>
+  <div class="two"><label>Rappel des relevés à partir de<select id="f-hour">${hours}</select></label><label>Notifications<span style="display:flex;gap:8px;align-items:center;min-height:42px;color:var(--ink);font-weight:500"><input type="checkbox" id="f-notify" ${st.notify?'checked':''}> Activer les rappels</span></label></div>`:''}
+  <h3>Mes commerces</h3><ul class="list">${cos}</ul>
+  <div class="row"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
+  ${desktopBlock()}
+  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button>${owner?'<button type="submit" class="btn primary">Enregistrer</button>':''}</div>`,{type:'account'},owner?'f-shop':null);
 };
+function desktopBlock(){return window.monkioskDesktop?`<div class="note" style="flex-wrap:wrap;align-items:center"><p><time>Application Windows</time><span id="upd-text">Version ${esc(desktopVersion)} · ${updLabel()}</span></p><button type="button" class="btn sm" id="upd-btn">${updState.state==='ready'?'Redémarrer et installer':'Rechercher une mise à jour'}</button></div>`:'';}
 
 /* ---------- Appli Windows : version et mises à jour ---------- */
 let desktopVersion='',updState={state:'idle'};

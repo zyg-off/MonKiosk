@@ -14,7 +14,8 @@ Chaque commerce a son compte. Les données sont enregistrées en ligne et synchr
 
 - `web/` : l'application (une seule page HTML). C'est la version en ligne.
 - `desktop/` : l'application Windows, qui reprend automatiquement le contenu de `web/`.
-- `supabase/schema.sql` : la base de données (comptes, commerces, sécurité). À exécuter une fois dans Supabase.
+- `supabase/schema.sql` : la base de données complète (comptes, commerces, salariés, sécurité), pour une nouvelle installation.
+- `supabase/migration-1.4.sql` : la mise à jour de la base pour la version 1.4 (comptes salariés, pointage).
 - `web/config.js` : l'adresse du projet Supabase et sa clé publique.
 
 ## Publier une nouvelle version
