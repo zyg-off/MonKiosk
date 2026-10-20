@@ -400,8 +400,24 @@ body.tablet-on{overflow:hidden}body.tablet-on .titlebar{z-index:26}
 .tb-keys button[data-tbback]{font-size:.95rem}
 .tb-ok{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;color:var(--ok)}.tb-ok .ic{width:64px;height:64px}.tb-ok h2{color:var(--ink)}
 /* affichage téléphone */
-@media (max-width:959px){.nav{display:flex;align-items:center;gap:2px}.nav ul{gap:0}.nav-account .avatar{width:22px;height:22px;font-size:.7rem}}
-@media (max-width:420px){.nav{padding:4px;max-width:calc(100% - 12px)}.nav button,.nav-account{padding:6px 5px;min-width:0}.nav button span.lbl,.nav-account .lbl-m{font-size:.6rem}.nav .badge{right:0}}
+.top-account{display:none;border:0;background:none;padding:0;border-radius:50%;cursor:pointer}
+.top-account .avatar{width:40px;height:40px;font-size:1rem;box-shadow:0 0 0 1px var(--line)}
+.top-account[aria-current="page"] .avatar{background:var(--accent);color:var(--accent-ink);box-shadow:0 0 0 3px var(--accent-soft)}
+@media (max-width:959px){
+  header.top{align-items:center;flex-wrap:nowrap}header.top .brand{min-width:0}
+  .top-account{display:flex;flex:none}
+  .nav-foot{display:none}
+  .nav{left:0;right:0;bottom:0;transform:none;width:auto;max-width:none;border-radius:20px 20px 0 0;border:0;border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px));box-shadow:0 -8px 24px -16px rgba(15,25,45,.35);display:block}
+  .nav ul{display:flex;width:100%;gap:0}
+  .nav li{flex:1;min-width:0;display:flex;justify-content:center}
+  .nav button{width:100%;min-width:0;padding:4px 0;gap:4px;border-radius:14px;background:none!important;color:var(--muted);font-size:.66rem}
+  .nav button svg{box-sizing:content-box;padding:5px 14px;border-radius:999px;transition:background .15s}
+  .nav button[aria-current="page"]{color:var(--accent);background:none}
+  .nav button[aria-current="page"] svg{background:var(--accent-soft);stroke:var(--accent)}
+  .nav button span.lbl{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.66rem}
+  .nav .badge{top:0;right:calc(50% - 26px)}
+}
+@media (max-width:360px){.nav button svg{padding:5px 10px}.nav button span.lbl{font-size:.6rem}}
 .row>input:not([type=checkbox]):not([type=radio]):not([type=file]),.row>select{flex:1 1 110px;min-width:100px}
 .note>p{flex:1 1 220px;min-width:0}
 @media (max-width:640px){.list li{flex-wrap:wrap}.list li .grow{flex:1 1 160px}.acc-hero h2{font-size:1.1rem;overflow-wrap:anywhere}.acc-hero>div{flex:1 1 180px}.acc-hero .btn{width:100%}.hide-m{display:none}.loss-table{font-size:.85rem}.loss-table .chip{white-space:normal;text-align:center}}
@@ -464,7 +480,7 @@ body.tablet-on{overflow:hidden}body.tablet-on .titlebar{z-index:26}
 <div class="app" id="appmain" hidden>
   <header class="top">
     <div class="brand"><small id="shopname">MonKiosk</small><h1 id="viewtitle">Accueil</h1></div>
-    <div class="tools"><span class="chip ok" id="sync" hidden>Synchronisé</span><button type="button" class="btn sm" id="account" hidden>Compte</button></div>
+    <div class="tools"><span class="chip ok" id="sync" hidden>Synchronisé</span><button type="button" class="btn sm" id="account" hidden>Compte</button><button type="button" class="top-account" id="top-account" aria-label="Mon compte"><span class="avatar" id="top-avatar">?</span></button></div>
   </header>
   <div class="example" id="example">
     <span>Mode démo : la boulangerie fictive « Au Pain Doré ». Rien n'est enregistré.</span>
@@ -2378,6 +2394,8 @@ document.addEventListener('click',ev=>{
     if(sb)sb.from('companies').update({name}).eq('id',company.id).then(()=>{});done('Nom du commerce enregistré',`Commerce renommé : ${name}`);commit();renderAccountPage();}
 });
 $('account').onclick=openAccount;
+$('top-account').onclick=()=>mode==='demo'?location.reload():openAccountPage();
+new MutationObserver(()=>{$('top-avatar').textContent=$('nav-avatar').textContent;const a=$('nav-account').getAttribute('aria-current');if(a)$('top-account').setAttribute('aria-current',a);else $('top-account').removeAttribute('aria-current');}).observe($('nav'),{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['aria-current']});
 $('nav-account').onclick=()=>mode==='demo'?location.reload():openAccountPage();
 function openSettings(){
   const st=state.settings,RU=rules(),H=st.hours||{},NK=Object.assign({temps:true,stock:true,conges:true,signalements:true,echanges:true,messages:true},st.notifyKinds||{});
