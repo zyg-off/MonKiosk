@@ -1,0 +1,54 @@
+{
+  "name": "monkiosk",
+  "productName": "MonKiosk",
+  "version": "1.0.0",
+  "description": "Planning, équipe, tâches, stock et ventes de ton commerce",
+  "author": "zyg",
+  "main": "main.js",
+  "scripts": {
+    "copy-web": "node copy-web.js",
+    "dist": "node copy-web.js && electron-builder --win nsis --x64"
+  },
+  "build": {
+    "appId": "com.zyg.monkiosk",
+    "productName": "MonKiosk",
+    "files": [
+      "main.js",
+      "app/**/*",
+      "build/icon.png"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "MonKiosk",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "artifactName": "MonKiosk-Setup-${version}.exe",
+      "language": "1036"
+    },
+    "afterPack": "./afterPack.js",
+    "publish": null
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-builder": "25.1.8",
+    "pe-library": "^1.0.1",
+    "resedit": "^2.0.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zyg-off/MonKiosk.git"
+  }
+}
