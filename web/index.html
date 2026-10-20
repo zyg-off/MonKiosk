@@ -188,7 +188,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
   .nav ul{flex-direction:column;gap:4px}
   .nav button{flex-direction:row;justify-content:flex-start;gap:12px;width:100%;padding:10px 12px;border-radius:12px;font-size:.92rem}
   .nav .badge{position:static;margin-left:auto}
-  .toast{left:calc(50% + 124px)}
+  body.with-nav .toast{left:calc(50% + 124px)}
 }
 /* barre de titre de l'appli Windows */
 .titlebar{display:none}
@@ -643,8 +643,10 @@ function merge3(b,l,sv){
   }
   return l;
 }
+function typing(){const a=document.activeElement;return !!a&&a!==document.body&&(a.tagName==='TEXTAREA'||a.tagName==='SELECT'||(a.tagName==='INPUT'&&!/checkbox|radio|file/.test(a.type)));}
 async function pushRemote(){
   if(!sb||!company||mode!=='cloud')return;
+  if(saving){clearTimeout(saveTimer);saveTimer=setTimeout(pushRemote,500);return;}
   saving=true;const seq=editSeq;
   try{
     const {data:srv,error:e1}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
@@ -657,10 +659,13 @@ async function pushRemote(){
     if(error)throw error;
     remoteAt=at;base=snap;dirty=editSeq!==seq;setSync(dirty?'saving':'ok');
     try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
-  }catch(e){setSync(navigator.onLine?'error':'offline');}
+  }catch(e){setSync(navigator.onLine?'error':'offline');clearTimeout(saveTimer);saveTimer=setTimeout(()=>{if(dirty)pushRemote();},8000);}
   saving=false;
 }
 function commit(){save();render();}
+// Deuxième clic pour confirmer une action difficile à annuler
+function armed(btn,label){if(btn.dataset.armed==='1')return true;const old=btn.textContent;btn.dataset.armed='1';btn.textContent=label;btn.classList.add('danger');
+  setTimeout(()=>{if(btn.isConnected&&btn.dataset.armed==='1'){btn.dataset.armed='';btn.textContent=old;}},3500);return false;}
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
 function empName(id){const e=state.employees.find(x=>x.id===id);return e?e.name:'Ancien salarié';}
 
@@ -676,9 +681,9 @@ function analyse(ws){
       const lv=leaveOn(emp.id,k(addDays(ws,d)));
       if(lv){out.push({lvl:'crit',tag:'Absence',txt:`<b>${n}</b> est planifié le ${DAYS_LONG[d].toLowerCase()} alors qu'il est absent (${lv.type.toLowerCase()}).`,go:'planning'});flags.add(emp.id+'-'+d);}
       if(len>600){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> travaille ${fh(len)} le ${DAYS_LONG[d].toLowerCase()}. La limite est de 10 h par jour.`,go:'planning'});flags.add(emp.id+'-'+d);}
-      const nx=sh[d+1];
-      if(nx&&d<6){const gap=1440+mins(nx.s)-(mins(x.s)+len);
-        if(gap<660){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> n'a que ${fh(gap)} de repos entre ${DAYS_LONG[d].toLowerCase()} et ${DAYS_LONG[d+1].toLowerCase()}. Il faut au moins 11 h.`,go:'planning'});flags.add(emp.id+'-'+(d+1));}}
+      const nx=d<6?sh[d+1]:((state.weeks[k(addDays(ws,7))]||{})[emp.id]||{})[0];
+      if(nx){const gap=1440+mins(nx.s)-(mins(x.s)+len);
+        if(gap<660){out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> n'a que ${fh(gap)} de repos entre ${DAYS_LONG[d].toLowerCase()} et ${DAYS_LONG[(d+1)%7].toLowerCase()}${d===6?' suivant':''}. Il faut au moins 11 h.`,go:'planning'});flags.add(emp.id+'-'+(d<6?d+1:d));}}
     }
     totals[emp.id]=total;const c=emp.contract*60;
     if(total>2880)out.push({lvl:'crit',tag:'Légal',txt:`<b>${n}</b> dépasse 48 h sur la semaine (${fh(total)}).`,go:'planning'});
@@ -755,9 +760,9 @@ function renderNav(){
   $('viewtitle').textContent=VIEWS[view];
   const badge=(id,n)=>{const b=$(id);b.hidden=!n;b.textContent=n;};
   badge('b-planning',analyse(thisMonday).out.filter(a=>a.lvl==='crit').length);
-  badge('b-equipe',pendingLeaves().length);
-  badge('b-taches',todayTemps().filter(t=>!tempOk(t)).length);
-  badge('b-stock',lowStock().length);
+  badge('b-equipe',feat('conges')?pendingLeaves().length:0);
+  badge('b-taches',feat('hygiene')?todayTemps().filter(t=>!tempOk(t)).length:0);
+  badge('b-stock',feat('stock')?lowStock().length:0);
 }
 function renderHome(){
   $('welcome').hidden=mode==='demo'||state.employees.length>0;
@@ -767,7 +772,7 @@ function renderHome(){
   const di=(today.getDay()+6)%7,w=state.weeks[k(thisMonday)]||{};
   const team=state.employees.map(e=>({e,x:(w[e.id]||{})[di]})).filter(o=>o.x).sort((a,b)=>mins(a.x.s)-mins(b.x.s));
   const off=state.employees.filter(e=>leaveOn(e.id,todayKey));
-  $('home-team').innerHTML=team.length?team.map(o=>`<li><span class="chip ${pcls(o.x.p)}">${esc(o.x.p)}</span><span class="grow"><strong>${esc(o.e.name)}</strong></span><span class="qty small">${o.x.s}–${o.x.e}</span></li>`).join('')+off.map(e=>`<li><span class="chip p-leave">Absent</span><span class="grow"><strong>${esc(e.name)}</strong></span></li>`).join(''):'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
+  $('home-team').innerHTML=(team.map(o=>`<li><span class="chip ${pcls(o.x.p)}">${esc(o.x.p)}</span><span class="grow"><strong>${esc(o.e.name)}</strong></span><span class="qty small">${o.x.s}–${o.x.e}</span></li>`).join('')+off.map(e=>`<li><span class="chip p-leave">Absent</span><span class="grow"><strong>${esc(e.name)}</strong></span></li>`).join(''))||'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
   const y=state.sales[k(addDays(today,-1))],a=weekSales(1),b=weekSales(8);
   const delta=b.ca?Math.round((a.ca-b.ca)/b.ca*100):0;
   $('home-sales').innerHTML=`<div class="kpi"><span class="muted small">Hier</span><span class="big">${y?eur.format(y.ca):'—'}</span></div>
@@ -819,7 +824,8 @@ function renderShare(){
 }
 function renderTeam(){
   const order={attente:0,'validé':1,'refusé':2};
-  const L=[...state.leaves].sort((a,b)=>order[a.status]-order[b.status]||a.from.localeCompare(b.from));
+  const cutoff=k(addDays(today,-30));
+  const L=state.leaves.filter(l=>l.status==='attente'||l.to>=cutoff).sort((a,b)=>order[a.status]-order[b.status]||a.from.localeCompare(b.from));
   $('leaves').innerHTML=L.length?L.map(l=>{
     const st=l.status==='attente'?'<span class="chip warn">En attente</span>':l.status==='validé'?'<span class="chip ok">Validé</span>':'<span class="chip crit">Refusé</span>';
     const range=l.from===l.to?`le ${fmtDM.format(fromKey(l.from))}`:`du ${fmtShort.format(fromKey(l.from))} au ${fmtShort.format(fromKey(l.to))}`;
@@ -942,6 +948,7 @@ sheet.addEventListener('click',ev=>{
   if(p){const[s,e]=p.dataset.p.split('-');$('f-s').value=s;$('f-e').value=e;return;}
   if(ev.target.id==='f-cancel')return closeSheet();
   if(ev.target.id==='f-del'){
+    if(ctx.type!=='shift'&&!armed(ev.target,'Confirmer la suppression'))return;
     if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];toast('Créneau retiré');}
     else if(ctx.type==='emp'){state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
     else if(ctx.type==='stock'){state.stock=state.stock.filter(s=>s.id!==ctx.id);toast('Article supprimé');}
@@ -956,6 +963,7 @@ sheet.addEventListener('submit',ev=>{
     const data={name,price:Math.max(0,parseFloat($('f-prprice').value)||0),unit:$('f-prunit').value.trim()||'pièce'};
     if(ctx.id)Object.assign(state.products.find(p=>p.id===ctx.id),data);else state.products.push({id:uid(),...data});
     toast('Produit enregistré');commit();openProducts();return;}
+  if(ctx.type==='import'){if(importData){state=normalize(importData,company?company.name:state.shop);importData=null;toast('Sauvegarde restaurée');commit();}closeSheet();return;}
   if(ctx.type==='register'){const m=$('f-month').value;closeSheet();if(m)setTimeout(()=>printRegister(m),80);return;}
   if(ctx.type==='tpl'){const name=$('f-tname').value.trim();if(!name)return toast('Donne un nom à cette semaine type');
     const wk=state.weeks[k(weekStart)]||{};if(!Object.values(wk).some(d=>Object.keys(d).length))return toast('La semaine affichée est vide');
@@ -988,7 +996,7 @@ sheet.addEventListener('submit',ev=>{
     toast('Postes mis à jour');
   }else if(ctx.type==='account'){
     const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
-    state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;
+    state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;$('nav-shop').textContent=name;$('titlebar-shop').textContent='· '+name;
     if(company.role==='owner')sb.from('companies').update({name}).eq('id',company.id).then(()=>{});
     const ms=memberships.find(x=>x.id===company.id);if(ms)ms.name=name;
     const notify=$('f-notify').checked;
@@ -1023,7 +1031,7 @@ document.addEventListener('click',ev=>{
   if(ds.stock)return openStock(ds.stock);
   if(ds.poste!=null)return openPoste(+ds.poste);
   if(ds.punch){const[e,kind]=ds.punch.split(':');state.punches.push({id:uid(),emp:e,kind,at:new Date().toISOString()});toast(kind==='in'?`Arrivée de ${empName(e)} enregistrée`:`Départ de ${empName(e)} enregistré`);return commit();}
-  if(ds.unlink){removeMember(ds.unlink);return;}
+  if(ds.unlink){if(!armed(t,'Confirmer'))return;removeMember(ds.unlink);return;}
   if(ds.delta){const[id,dl]=ds.delta.split(':');const s=state.stock.find(x=>x.id===id);s.qty=Math.max(0,Math.round((s.qty+Number(dl))*10)/10);return commit();}
   if(ds.leaveOk){state.leaves.find(l=>l.id===ds.leaveOk).status='validé';toast('Congé validé');return commit();}
   if(ds.leaveNo){state.leaves.find(l=>l.id===ds.leaveNo).status='refusé';toast('Demande refusée');return commit();}
@@ -1046,6 +1054,7 @@ $('edit-postes').onclick=()=>go('equipe');
 $('copy-week').onclick=()=>{
   const prev=state.weeks[k(addDays(weekStart,-7))];
   if(!prev||!Object.keys(prev).length)return toast('La semaine précédente est vide');
+  const cur=state.weeks[k(weekStart)];if(cur&&Object.values(cur).some(d=>Object.keys(d).length)&&!armed($('copy-week'),'Remplacer la semaine affichée ?'))return;
   state.weeks[k(weekStart)]=JSON.parse(JSON.stringify(prev));commit();toast('Semaine précédente reprise');
 };
 $('share-emp').onchange=renderShare;
@@ -1055,11 +1064,25 @@ $('n-add').onclick=()=>{const txt=$('n-text').value.trim();if(!txt)return toast(
 $('t-add').onclick=()=>{const v=parseFloat($('t-val').value);if(isNaN(v))return toast('Indique la température relevée');
   const r={id:uid(),at:new Date().toISOString(),equip:$('t-equip').value,val:v};state.temps.push(r);$('t-val').value='';toast(tempOk(r)?'Relevé conforme':'Attention : température hors norme');commit();};
 $('s-add').onclick=()=>{const d=$('s-date').value,ca=parseFloat($('s-ca').value),tk=parseInt($('s-tk').value,10)||0;
-  if(!d||isNaN(ca))return toast("Indique la date et le chiffre d'affaires");state.sales[d]={ca,tk};$('s-ca').value='';$('s-tk').value='';toast('Journée enregistrée');commit();};
+  if(!d||isNaN(ca)||ca<0)return toast("Indique la date et le chiffre d'affaires");const had=!!state.sales[d];state.sales[d]={ca,tk};$('s-ca').value='';$('s-tk').value='';toast(had?'Journée mise à jour':'Journée enregistrée');commit();};
+$('s-date').onchange=()=>{const v=state.sales[$('s-date').value];$('s-ca').value=v?v.ca:'';$('s-tk').value=v&&v.tk?v.tk:'';};
 $('reset').onclick=()=>location.reload();
+document.addEventListener('keydown',ev=>{
+  if(ev.key!=='Enter'||ev.isComposing)return;const t=ev.target,id=t.id||'',click=sel=>{const b=document.querySelector(sel);if(b){ev.preventDefault();b.click();}};
+  if(id==='t-val')click('#t-add');
+  else if(id==='s-ca'||id==='s-tk')click('#s-add');
+  else if(id.startsWith('add-')&&t.closest('#checklists'))click(`[data-addtask="${id.slice(4)}"]`);
+  else if(id==='e-pcode')click('[data-eact="punchgo"]');
+  else if(id==='e-val')click('[data-eact="temp"]');
+  else if(t.dataset&&(t.dataset.lossq||t.dataset.elossq)){ev.preventDefault();const attr=t.dataset.lossq?'lossq':'elossq',all=[...document.querySelectorAll(`[data-${attr}]`)],i=all.indexOf(t);
+    if(all[i+1])all[i+1].focus();else t.blur();}
+});
 
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`monkiosk-sauvegarde-${todayKey}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast('Sauvegarde exportée');};
-$('import').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!s.employees||!s.weeks||!s.stock)throw 0;state=s;save();render();toast('Sauvegarde importée');}catch(e){toast("Ce fichier n'est pas une sauvegarde MonKiosk");}ev.target.value='';};r.readAsText(f);};
+let importData=null;
+$('import').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{ev.target.value='';
+  try{const d=JSON.parse(r.result);if(!d.employees||!d.weeks||!d.stock)throw 0;importData=d;}catch(e){return toast("Ce fichier n'est pas une sauvegarde MonKiosk");}
+  openSheet(`<h2>Restaurer la sauvegarde ?</h2><p class="muted small" style="margin:0">Toutes les données actuelles de ${esc(state.shop||'ton commerce')} (planning, équipe, stock, ventes…) seront remplacées par celles du fichier, sur tous tes appareils.</p><div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Remplacer mes données</button></div>`,{type:'import'},null);};r.readAsText(f);};
 let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
 if(framed){$('export').hidden=true;$('export-note').hidden=false;}
 const h=(location.hash||'').slice(1);if(VIEWS[h])view=h;
@@ -1088,16 +1111,16 @@ function renderPunches(){
   $('punch-code').textContent=currentCode()||'—';
   const lbl=fmtFull.format(today);$('punch-date').textContent=lbl.charAt(0).toUpperCase()+lbl.slice(1);
   const di=(today.getDay()+6)%7,w=state.weeks[k(thisMonday)]||{};
-  const rows=state.employees.map(e=>({e,x:(w[e.id]||{})[di],ps:punchesOf(state.punches,e.id,todayKey)})).filter(r=>r.x||r.ps.length);
+  const rows=state.employees.map(e=>({e,x:(w[e.id]||{})[di],ps:punchesOf(state.punches,e.id,todayKey)})).sort((a,b)=>((b.x||b.ps.length)?1:0)-((a.x||a.ps.length)?1:0)||(a.x&&b.x?mins(a.x.s)-mins(b.x.s):0));
   $('punches').innerHTML=rows.length?rows.map(({e,x,ps})=>{
     const last=ps[ps.length-1],inNow=last&&last.kind==='in',first=ps.find(p=>p.kind==='in');
     let chip;
-    if(!ps.length)chip=x&&nowMin()>mins(x.s)+5?'<span class="chip crit">Pas arrivé</span>':'<span class="chip info">Attendu</span>';
+    if(!ps.length)chip=!x?'':nowMin()>mins(x.s)+5?'<span class="chip crit">Pas arrivé</span>':'<span class="chip info">Attendu</span>';
     else chip=inNow?'<span class="chip ok">En poste</span>':'<span class="chip info">Parti</span>';
     let late='';if(first&&x){const diff=localMin(first.at)-mins(x.s);if(diff>5)late=`<span class="chip warn">Retard ${diff} min</span>`;}
     const times=ps.map(p=>(p.kind==='in'?'arrivée ':'départ ')+hm(p.at)).join(' · ');
     return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)}</strong><span class="muted small">${x?'Prévu '+x.s+'–'+x.e:'Non planifié'}${times?' · '+times:''}${ps.length?' · '+fh(workedMin(ps)):''}</span></span>${chip}${late}<button type="button" class="btn sm ${inNow?'':'primary'}" data-punch="${e.id}:${inNow?'out':'in'}">${inNow?'Départ':'Arrivée'}</button></li>`;
-  }).join(''):'<li class="empty-note">Personne n\'est planifié aujourd\'hui.</li>';
+  }).join(''):'<li class="empty-note">Ajoute ton équipe pour suivre le pointage.</li>';
 }
 
 /* ---------- Comptes salariés (côté patron) ---------- */
@@ -1112,12 +1135,12 @@ function renderAccounts(){
   const card=$('accounts-card');card.hidden=mode!=='cloud'||!company||company.role!=='owner'||!feat('espace');if(card.hidden)return;
   $('join-code').textContent=joinCode||'—';
   const emps=members.filter(m=>m.role==='employee');
-  $('members').innerHTML=!joinCode?'<li class="empty-note">Lance le fichier migration-1.4.sql dans Supabase pour activer les comptes salariés.</li>':
+  $('members').innerHTML=!joinCode?'<li class="empty-note">Code indisponible : lance la dernière migration de la base dans Supabase.</li>':
     emps.length?emps.map(m=>`<li><span class="grow"><strong>${esc(empName(m.employee_id))}</strong><span class="muted small">${esc(m.email)}</span></span><button type="button" class="btn sm danger" data-unlink="${m.user_id}">Retirer l'accès</button></li>`).join(''):'<li class="empty-note">Aucun salarié connecté pour l\'instant.</li>';
 }
 async function removeMember(uid){const {error}=await sb.rpc('remove_member',{cid:company.id,uid});if(error)return toast(frError(error));toast('Accès retiré');loadMembers();}
 $('copy-code').onclick=()=>{if(!joinCode)return;try{navigator.clipboard.writeText(joinCode).then(()=>toast('Code copié'),()=>toast('Code : '+joinCode));}catch(e){toast('Code : '+joinCode);}};
-$('regen-code').onclick=async()=>{const {data,error}=await sb.rpc('regenerate_join_code',{cid:company.id});if(error)return toast(frError(error));joinCode=data;renderAccounts();toast("Nouveau code créé. L'ancien ne fonctionne plus.");};
+$('regen-code').onclick=async()=>{if(!armed($('regen-code'),'Confirmer le nouveau code'))return;const {data,error}=await sb.rpc('regenerate_join_code',{cid:company.id});if(error)return toast(frError(error));joinCode=data;renderAccounts();toast("Nouveau code créé. L'ancien ne fonctionne plus.");};
 
 /* ---------- Ventes : mois et pertes ---------- */
 const fmtMonth=new Intl.DateTimeFormat('fr-FR',{month:'short'});
@@ -1154,7 +1177,7 @@ function lossKpis(){
 function lossTable(products,day,entries,attr){
   if(!products.length)return `<tbody><tr><td class="empty-note">${attr==='lossq'?'Ajoute tes produits avec « Gérer les produits ». Ensuite, il suffit de saisir les quantités.':'Ton responsable n\'a pas encore créé de produits.'}</td></tr></tbody>`;
   let total=0;const rows=products.map(p=>{const e=entries[p.id];if(e)total+=e.v||0;
-    return `<tr><td><strong>${esc(p.name)}</strong><br><span class="muted small">${eur2.format(p.price||0)} / ${esc(p.unit||'pièce')}</span></td><td><input type="number" min="0" step="1" inputmode="decimal" data-${attr}="${p.id}" value="${e?e.q:''}" placeholder="0" aria-label="Quantité ${esc(p.name)}"></td><td class="num" data-v-${attr}="${p.id}">${eur2.format(e?e.v:0)}</td></tr>`;}).join('');
+    return `<tr><td><strong>${esc(p.name)}</strong><br><span class="muted small">${eur2.format(p.price||0)} / ${esc(p.unit||'pièce')}</span></td><td><input type="number" min="0" step="any" inputmode="decimal" data-${attr}="${p.id}" value="${e?e.q:''}" placeholder="0" aria-label="Quantité ${esc(p.name)}"></td><td class="num" data-v-${attr}="${p.id}">${eur2.format(e?e.v:0)}</td></tr>`;}).join('');
   return `<thead><tr><th>Produit</th><th>Quantité</th><th style="text-align:right">Valeur</th></tr></thead><tbody>${rows}</tbody><tfoot><tr><th>Total du ${fmtDM.format(fromKey(day))}</th><td></td><td class="num"><strong data-total-${attr}>${eur2.format(total)}</strong></td></tr></tfoot>`;
 }
 function renderLosses(){
@@ -1198,12 +1221,13 @@ function notifyLoop(){
   let sent={};try{sent=JSON.parse(localStorage.getItem('monkiosk-notified')||'{}');}catch(e){}
   if(sent.day!==k(new Date()))sent={day:k(new Date())};
   const items=reminders().map(r=>({key:r.key,txt:r.txt.replace(/<[^>]+>/g,'')}));
-  const low=lowStock();if(low.length)items.push({key:'stock'+low.length,txt:`À commander : ${low.map(x=>x.name).join(', ')}`});
-  const pend=pendingLeaves();if(pend.length)items.push({key:'leaves'+pend.length,txt:`${pend.length} demande${pend.length>1?'s':''} de congé à traiter`});
+  const low=feat('stock')?lowStock():[];if(low.length)items.push({key:'stock'+low.length,txt:`À commander : ${low.map(x=>x.name).join(', ')}`});
+  const pend=feat('conges')?pendingLeaves():[];if(pend.length)items.push({key:'leaves'+pend.length,txt:`${pend.length} demande${pend.length>1?'s':''} de congé à traiter`});
   items.forEach(it=>{if(sent[it.key])return;try{new Notification('MonKiosk',{body:it.txt,icon:'icons/icon-192.png'});}catch(e){}sent[it.key]=true;});
   try{localStorage.setItem('monkiosk-notified',JSON.stringify(sent));}catch(e){}
 }
 setInterval(notifyLoop,10*60*1000);
+setInterval(()=>{if(k(new Date())!==todayKey&&overlay.hidden&&!dirty&&!saving&&!typing())location.reload();},60000);
 
 /* ---------- Impression : planning et registre ---------- */
 function printHTML(html){$('print-area').innerHTML=html;setTimeout(()=>window.print(),50);}
@@ -1247,6 +1271,7 @@ $('register-btn').onclick=openRegister;
 
 /* ---------- Espace salarié ---------- */
 async function loadEmployee(quiet){
+  if(quiet&&(pendingPunch||typing()))return;
   if(!quiet)authStep('a-loading');
   const {data,error}=await sb.rpc('employee_view',{cid:company.id,p_day:todayKey});
   if(error){if(quiet)return;authStep('a-company');authMsg('a-cmsg',frError(error),'err');return;}
@@ -1276,9 +1301,9 @@ function renderEmployee(){
     return `<div class="card-head"><h3>Semaine du ${fmtDM.format(ws)}</h3><span class="muted small">${fh(t)}</span></div><ul class="list">${rows}</ul>`;};
   $('e-plan').innerHTML=`<h2>Mon planning</h2>`+weekHTML(thisMonday)+weekHTML(addDays(thisMonday,7));
   const dn=eView.done||{};
-  $('e-tasks').innerHTML=(eView.lists||[]).map(l=>`<div class="card-head" style="margin-top:6px"><strong>${esc(l.name)}</strong><span class="muted small">${l.items.filter(i=>dn[i.id]).length} / ${l.items.length}</span></div>
+  $('e-tasks').innerHTML=(F.taches===false?[]:(eView.lists||[])).map(l=>`<div class="card-head" style="margin-top:6px"><strong>${esc(l.name)}</strong><span class="muted small">${l.items.filter(i=>dn[i.id]).length} / ${l.items.length}</span></div>
     <ul class="list" style="margin-bottom:8px">${l.items.map(i=>`<li><label class="check ${dn[i.id]?'done':''}"><input type="checkbox" data-etask="${i.id}" ${dn[i.id]?'checked':''}><span>${esc(i.text)}</span></label></li>`).join('')}</ul>`).join('')+
-    ((eView.equipments||[]).length?`<h3 style="margin-top:6px">Relevé de température</h3><div class="row"><select id="e-equip" aria-label="Équipement">${eView.equipments.map(q=>`<option>${esc(q.name)}</option>`).join('')}</select><input type="number" id="e-val" step="0.1" placeholder="°C" style="max-width:100px" aria-label="Température"><button type="button" class="btn" data-eact="temp">Enregistrer</button></div>`:'');
+    (F.hygiene!==false&&(eView.equipments||[]).length?`<h3 style="margin-top:6px">Relevé de température</h3><div class="row"><select id="e-equip" aria-label="Équipement">${eView.equipments.map(q=>`<option>${esc(q.name)}</option>`).join('')}</select><input type="number" id="e-val" step="0.1" placeholder="°C" style="max-width:100px" aria-label="Température"><button type="button" class="btn" data-eact="temp">Enregistrer</button></div>`:'');
   const L=[...(eView.leaves||[])].sort((a,b)=>b.from.localeCompare(a.from));
   $('e-leaves').innerHTML=`<ul class="list">${L.map(l=>`<li><span class="grow"><strong>${esc(l.type)}</strong><span class="muted small">${l.from===l.to?'le '+fmtDM.format(fromKey(l.from)):'du '+fmtShort.format(fromKey(l.from))+' au '+fmtShort.format(fromKey(l.to))}</span></span>${l.status==='attente'?'<span class="chip warn">En attente</span>':l.status==='validé'?'<span class="chip ok">Validé</span>':'<span class="chip crit">Refusé</span>'}</li>`).join('')||'<li class="empty-note">Aucune demande pour l\'instant.</li>'}</ul>
     <h3 style="margin-top:12px">Nouvelle demande</h3>
@@ -1402,7 +1427,7 @@ function applyRemote(row){
   if(!row||!row.data||!row.data.employees)return;
   const t=Date.parse(row.updated_at);
   if((lastLocalSave&&t===Date.parse(lastLocalSave))||(remoteAt&&t<=Date.parse(remoteAt)))return;
-  if(!overlay.hidden||saving||dirty){pendingRemote=row;return;}
+  if(!overlay.hidden||saving||dirty||typing()){pendingRemote=row;return;}
   remoteAt=row.updated_at;state=normalize(row.data,company.name);base=clone(row.data);
   try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
   render();toast('Mis à jour depuis un autre appareil');
@@ -1418,7 +1443,7 @@ async function refresh(){
   const {data}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
   if(data)applyRemote(data);
 }
-setInterval(()=>{if(pendingRemote&&overlay.hidden&&!saving&&!dirty){const r=pendingRemote;pendingRemote=null;applyRemote(r);}},1500);
+setInterval(()=>{if(pendingRemote&&overlay.hidden&&!saving&&!dirty&&!typing()){const r=pendingRemote;pendingRemote=null;applyRemote(r);}},1500);
 addEventListener('focus',refresh);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
 addEventListener('online',()=>{if(mode==='cloud'&&state)pushRemote();});
