@@ -8,12 +8,14 @@ L'outil de gestion des petits commerces : planning d'équipe, congés, annonces,
   Sur téléphone, ajoute la page à l'écran d'accueil pour l'installer comme une appli.
 - **Sur PC Windows** : télécharge `MonKiosk-Setup.exe` dans la page [Releases](https://github.com/zyg-off/MonKiosk/releases).
 
-Les données restent sur chaque appareil. Pour passer de l'un à l'autre, utilise *Exporter mes données* puis *Importer une sauvegarde* sur l'Accueil.
+Chaque commerce a son compte. Les données sont enregistrées en ligne et synchronisées en direct entre le site, le téléphone et l'appli PC. Le bouton *Découvrir la démo* ouvre un exemple sans rien enregistrer.
 
 ## Organisation du projet
 
 - `web/` : l'application (une seule page HTML). C'est la version en ligne.
 - `desktop/` : l'application Windows, qui reprend automatiquement le contenu de `web/`.
+- `supabase/schema.sql` : la base de données (comptes, commerces, sécurité). À exécuter une fois dans Supabase.
+- `web/config.js` : l'adresse du projet Supabase et sa clé publique.
 
 ## Publier une nouvelle version
 

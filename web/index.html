@@ -155,6 +155,23 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 .nav button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
 .nav .badge{position:absolute;top:2px;right:calc(50% - 20px);min-width:16px;height:16px;border-radius:99px;background:var(--crit);color:var(--surface);font-size:.62rem;line-height:16px;padding:0 4px}
+/* auth */
+.auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding-block:32px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px))}
+.auth-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:28px 24px;width:100%;max-width:420px;display:flex;flex-direction:column;gap:16px}
+.auth-card .logo{display:flex;align-items:center;gap:12px}
+.auth-card .logo svg{width:44px;height:44px;flex:none}
+.auth-card .logo strong{font-family:var(--f-display);font-weight:800;font-size:1.7rem;letter-spacing:-.02em}
+.auth-card p{margin:0;color:var(--muted);font-size:.92rem}
+.auth-card label{display:flex;flex-direction:column;gap:4px;font-size:.82rem;font-weight:600;color:var(--muted)}
+.auth-card input{width:100%}
+.auth-card .btn{width:100%}
+.auth-msg{font-size:.88rem;border-radius:10px;padding:10px 12px}
+.auth-msg.err{background:var(--crit-bg);color:var(--crit)}
+.auth-msg.info{background:var(--accent-soft);color:var(--accent)}
+.divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.8rem}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.welcome ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
 /* sheet */
 .overlay{position:fixed;inset:0;background:rgba(10,14,20,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:460px;border-radius:18px 18px 0 0;padding:20px max(20px, env(safe-area-inset-right, 0px)) calc(20px + env(safe-area-inset-bottom, 0px)) max(20px, env(safe-area-inset-left, 0px));display:flex;flex-direction:column;gap:14px;max-height:90vh;overflow:auto}
@@ -171,17 +188,59 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 
 </head>
 <body>
-<div class="app">
+<div class="auth" id="auth">
+  <div class="auth-card">
+    <div class="logo"><svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#2453c9"/><rect x="13" y="13" width="38" height="4" rx="2" fill="#fff"/><path d="M14 17h7v10a3.5 3.5 0 0 1-7 0zM28 17h8v10a4 4 0 0 1-8 0zM43 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#fff"/><path d="M21 17h7v10a3.5 3.5 0 0 1-7 0zM36 17h7v10a3.5 3.5 0 0 1-7 0z" fill="#c8d6fa"/><rect x="15" y="27" width="2.5" height="9" fill="#fff"/><rect x="46.5" y="27" width="2.5" height="9" fill="#fff"/><rect x="13" y="36" width="38" height="15" rx="3" fill="#fff"/><rect x="18" y="41" width="28" height="3" rx="1.5" fill="#2453c9"/></svg><strong>MonKiosk</strong></div>
+
+    <div id="a-loading"><p>Chargement…</p></div>
+
+    <form id="a-login" hidden novalidate>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <p id="a-login-intro">Connecte-toi pour retrouver ton commerce sur tous tes appareils.</p>
+        <label>E-mail<input type="email" id="a-email" autocomplete="email" placeholder="toi@exemple.fr"></label>
+        <label>Mot de passe<input type="password" id="a-pass" autocomplete="current-password" placeholder="8 caractères minimum"></label>
+        <div class="auth-msg" id="a-msg" hidden></div>
+        <button type="submit" class="btn primary" id="a-submit">Se connecter</button>
+        <button type="button" class="linkbtn" id="a-toggle" style="align-self:center">Pas encore de compte ? Créer un compte</button>
+      </div>
+    </form>
+
+    <form id="a-company" hidden novalidate>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <p>Bienvenue ! Donne un nom à ton commerce. Tu pourras le changer plus tard.</p>
+        <label>Nom du commerce<input type="text" id="a-cname" placeholder="Ex. Boulangerie Martin"></label>
+        <div class="auth-msg err" id="a-cmsg" hidden></div>
+        <button type="submit" class="btn primary">Créer mon commerce</button>
+        <button type="button" class="linkbtn" data-logout style="align-self:center">Me déconnecter</button>
+      </div>
+    </form>
+
+    <div id="a-config" hidden style="display:flex;flex-direction:column;gap:14px">
+      <p>MonKiosk n'est pas encore relié à sa base de données. Tu peux quand même découvrir l'appli avec l'exemple.</p>
+    </div>
+
+    <div class="divider">ou</div>
+    <button type="button" class="btn" id="a-demo">Découvrir la démo</button>
+  </div>
+</div>
+
+<div class="app" id="appmain" hidden>
   <header class="top">
-    <div class="brand"><small>MonKiosk · Au Pain Doré</small><h1 id="viewtitle">Accueil</h1></div>
+    <div class="brand"><small id="shopname">MonKiosk</small><h1 id="viewtitle">Accueil</h1></div>
+    <div class="tools"><span class="chip ok" id="sync">Synchronisé</span><button type="button" class="btn sm" id="account">Compte</button></div>
   </header>
   <div class="example" id="example">
-    <span>Exemple : la boulangerie fictive « Au Pain Doré ». Tout est modifiable, tes changements restent sur cet appareil.</span>
-    <button type="button" class="linkbtn" id="reset">Repartir de l'exemple</button>
+    <span>Mode démo : la boulangerie fictive « Au Pain Doré ». Rien n'est enregistré.</span>
+    <button type="button" class="linkbtn" id="reset">Quitter la démo</button>
   </div>
 
   <!-- ACCUEIL -->
   <section class="view" id="v-accueil">
+    <div class="card welcome" id="welcome" hidden>
+      <h2>Bienvenue dans ton MonKiosk</h2>
+      <p class="muted small" style="margin:0">Ton commerce est vide pour l'instant. Trois étapes pour bien démarrer :</p>
+      <ol><li><button type="button" class="linkbtn" id="w-team">Ajoute tes salariés</button></li><li><button type="button" class="linkbtn" data-go="planning">Remplis le planning de la semaine</button></li><li><button type="button" class="linkbtn" data-go="stock">Ajoute tes articles en stock</button></li></ol>
+    </div>
     <div class="card"><div class="card-head"><h2 id="today-label"></h2><span class="chip info" id="today-count"></span></div>
       <ul class="alerts" id="home-alerts"></ul></div>
     <div class="grid">
@@ -289,7 +348,7 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
   </section>
 </div>
 
-<nav class="nav" aria-label="Sections">
+<nav class="nav" id="nav" aria-label="Sections" hidden>
   <ul>
     <li><button type="button" data-view="accueil"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Accueil</button></li>
     <li><button type="button" data-view="planning"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Planning<span class="badge" id="b-planning" hidden></span></button></li>
@@ -303,6 +362,8 @@ pre.msg{white-space:pre-wrap;font-family:var(--f-mono);font-size:.85rem;backgrou
 <div class="overlay" id="overlay" hidden><form class="sheet" id="sheet" novalidate></form></div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.js"></script>
 <script>
 const DAYS=['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.'];
 const DAYS_LONG=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
@@ -389,10 +450,37 @@ function seed(){
     sales
   };
 }
-function load(){try{const r=localStorage.getItem(KEY)||localStorage.getItem('creneau-v2');if(r){const s=JSON.parse(r);if(s&&s.employees&&s.weeks&&s.stock)return s;}}catch(e){}return seed();}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
-let state=load();
-function commit(){state.example=false;save();render();}
+function emptyState(name){
+  return {shop:name,employees:[],weeks:{},leaves:[],notes:[],
+    lists:[
+      {id:uid(),name:'Ouverture',items:[{id:uid(),text:'Allumer les équipements'},{id:uid(),text:'Mettre en place la vitrine'},{id:uid(),text:'Relever les températures des frigos'},{id:uid(),text:'Compter le fond de caisse'}]},
+      {id:uid(),name:'Fermeture',items:[{id:uid(),text:'Nettoyer les plans de travail'},{id:uid(),text:'Noter les invendus'},{id:uid(),text:'Compter la caisse'},{id:uid(),text:"Activer l'alarme"}]}
+    ],
+    done:{},equipments:[{name:'Chambre froide',min:0,max:4},{name:'Vitrine réfrigérée',min:0,max:4},{name:'Congélateur',min:-30,max:-18}],
+    temps:[],stock:[],sales:{}};
+}
+function normalize(d,name){const e=emptyState(name);const s=Object.assign({},e,d||{});['employees','leaves','notes','temps','stock','lists','equipments'].forEach(k=>{if(!Array.isArray(s[k]))s[k]=e[k];});['weeks','done','sales'].forEach(k=>{if(!s[k]||typeof s[k]!=='object')s[k]={};});return s;}
+
+const CFG=window.MONKIOSK_CONFIG||{};
+let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,lastLocalSave=null,remoteAt=null,pendingRemote=null,saving=false,dirty=false;
+const cacheKey=()=>'monkiosk-cache-'+(company?company.id:'x');
+function readCache(){try{const r=localStorage.getItem(cacheKey());return r?JSON.parse(r):null;}catch(e){return null;}}
+function setSync(st){const m={ok:['Synchronisé','ok'],saving:['Enregistrement…','info'],error:['Non synchronisé','crit'],offline:['Hors ligne','warn'],demo:['Démo','warn']}[st];const el=$('sync');el.textContent=m[0];el.className='chip '+m[1];}
+function save(){
+  if(mode==='demo')return;
+  try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
+  dirty=true;setSync('saving');clearTimeout(saveTimer);saveTimer=setTimeout(pushRemote,600);
+}
+async function pushRemote(){
+  if(!sb||!company)return;
+  saving=true;const at=new Date().toISOString();lastLocalSave=at;
+  try{
+    const {error}=await sb.from('company_data').update({data:state,updated_at:at,updated_by:user.id}).eq('company_id',company.id);
+    if(error)throw error;remoteAt=at;dirty=false;setSync('ok');
+  }catch(e){setSync(navigator.onLine?'error':'offline');}
+  saving=false;
+}
+function commit(){save();render();}
 let tt;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(tt);tt=setTimeout(()=>t.hidden=true,2200);}
 function empName(id){const e=state.employees.find(x=>x.id===id);return e?e.name:'Ancien salarié';}
 
@@ -455,6 +543,7 @@ function renderNav(){
   badge('b-stock',lowStock().length);
 }
 function renderHome(){
+  $('welcome').hidden=mode==='demo'||state.employees.length>0;
   const lbl=fmtFull.format(today);$('today-label').textContent=lbl.charAt(0).toUpperCase()+lbl.slice(1);
   const al=homeAlerts();$('today-count').textContent=al.length?`${al.length} point${al.length>1?'s':''} à traiter`:'Tout est en ordre';
   $('home-alerts').innerHTML=alertHTML(al,true);
@@ -631,6 +720,11 @@ sheet.addEventListener('submit',ev=>{
     if(!from||!to||to<from)return toast('La date de fin doit être après la date de début');
     state.leaves.push({id:uid(),emp:$('f-lemp').value,type:$('f-ltype').value,from,to,status:$('f-lok').checked?'validé':'attente'});
     toast('Demande enregistrée');
+  }else if(ctx.type==='account'){
+    const name=$('f-shop').value.trim();if(!name)return toast('Indique le nom du commerce');
+    state.shop=name;company.name=name;$('shopname').textContent='MonKiosk · '+name;
+    if(company.role==='owner')sb.from('companies').update({name}).eq('id',company.id).then(()=>{});
+    toast('Commerce renommé');
   }else if(ctx.type==='stock'){
     const name=$('f-sname').value.trim();if(!name)return toast("Indique le nom de l'article");
     const data={name,unit:$('f-sunit').value.trim()||'unités',qty:Math.max(0,parseFloat($('f-sqty').value)||0),min:Math.max(0,parseFloat($('f-smin').value)||0),supplier:$('f-ssup').value.trim()||'Sans fournisseur'};
@@ -687,14 +781,124 @@ $('t-add').onclick=()=>{const v=parseFloat($('t-val').value);if(isNaN(v))return 
   const r={id:uid(),at:new Date().toISOString(),equip:$('t-equip').value,val:v};state.temps.push(r);$('t-val').value='';toast(tempOk(r)?'Relevé conforme':'Attention : température hors norme');commit();};
 $('s-add').onclick=()=>{const d=$('s-date').value,ca=parseFloat($('s-ca').value),tk=parseInt($('s-tk').value,10)||0;
   if(!d||isNaN(ca))return toast("Indique la date et le chiffre d'affaires");state.sales[d]={ca,tk};$('s-ca').value='';$('s-tk').value='';toast('Journée enregistrée');commit();};
-$('reset').onclick=()=>{state=seed();weekStart=new Date(thisMonday);save();render();toast('Exemple rechargé');};
+$('reset').onclick=()=>location.reload();
 
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`monkiosk-sauvegarde-${todayKey}.json`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1500);toast('Sauvegarde exportée');};
 $('import').onchange=ev=>{const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const s=JSON.parse(r.result);if(!s.employees||!s.weeks||!s.stock)throw 0;state=s;save();render();toast('Sauvegarde importée');}catch(e){toast("Ce fichier n'est pas une sauvegarde MonKiosk");}ev.target.value='';};r.readAsText(f);};
 let framed=false;try{framed=window.self!==window.top;}catch(e){framed=true;}
 if(framed){$('export').hidden=true;$('export-note').hidden=false;}
 const h=(location.hash||'').slice(1);if(VIEWS[h])view=h;
-render();
+
+/* ---------- Comptes et synchronisation ---------- */
+let signup=false;
+function authStep(step){
+  $('appmain').hidden=true;$('nav').hidden=true;$('auth').hidden=false;
+  ['a-loading','a-login','a-company','a-config'].forEach(id=>$(id).hidden=id!==step);
+}
+function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
+function frError(e){const m=(e&&e.message)||'';
+  if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
+  if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
+  if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
+  if(/email not confirmed/i.test(m))return "Confirme d'abord ton e-mail grâce au lien reçu, puis connecte-toi.";
+  if(/valid email|invalid email/i.test(m))return "L'adresse e-mail n'est pas valide.";
+  if(/fetch|network/i.test(m))return 'Pas de connexion internet. Réessaie dans un instant.';
+  return 'Une erreur est survenue : '+m;}
+function showApp(){
+  $('auth').hidden=true;$('appmain').hidden=false;$('nav').hidden=false;
+  $('shopname').textContent='MonKiosk · '+(state.shop||(company&&company.name)||'Démo');
+  $('account').hidden=mode==='demo';
+  render();
+}
+async function boot(){
+  if(!CFG.url||!CFG.anonKey||!window.supabase){authStep('a-config');return;}
+  sb=window.supabase.createClient(CFG.url,CFG.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+  try{const {data:{session}}=await sb.auth.getSession();
+    if(session){user=session.user;await afterLogin();}else authStep('a-login');
+  }catch(e){authStep('a-login');}
+}
+async function afterLogin(){
+  authStep('a-loading');
+  const {data,error}=await sb.from('members').select('company_id,role,companies(name)').eq('user_id',user.id).order('created_at');
+  if(error){const last=localStorage.getItem('monkiosk-last-company');if(last){company=JSON.parse(last);const c=readCache();if(c){state=normalize(c,company.name);setSync('offline');showApp();return;}}
+    authStep('a-login');authMsg('a-msg',frError(error),'err');return;}
+  if(!data.length){authStep('a-company');$('a-cname').focus();return;}
+  const m=data[0];company={id:m.company_id,name:(m.companies&&m.companies.name)||'Mon commerce',role:m.role};
+  await loadCompany();
+}
+async function loadCompany(){
+  try{localStorage.setItem('monkiosk-last-company',JSON.stringify(company));}catch(e){}
+  const {data,error}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
+  if(error){const c=readCache();if(c){state=normalize(c,company.name);setSync('offline');showApp();return;}
+    authStep('a-login');authMsg('a-msg',frError(error),'err');return;}
+  const fresh=!data.data||!data.data.employees;
+  state=normalize(fresh?null:data.data,company.name);remoteAt=data.updated_at;
+  showApp();
+  if(fresh)pushRemote();else setSync('ok');
+  subscribe();
+}
+function applyRemote(row){
+  if(!row||!row.data||!row.data.employees)return;
+  const t=Date.parse(row.updated_at);
+  if((lastLocalSave&&t===Date.parse(lastLocalSave))||(remoteAt&&t<=Date.parse(remoteAt)))return;
+  if(!overlay.hidden||saving||dirty){pendingRemote=row;return;}
+  remoteAt=row.updated_at;state=normalize(row.data,company.name);
+  try{localStorage.setItem(cacheKey(),JSON.stringify(state));}catch(e){}
+  render();toast('Mis à jour depuis un autre appareil');
+}
+function subscribe(){
+  sb.channel('company-'+company.id)
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'company_data',filter:'company_id=eq.'+company.id},p=>applyRemote(p.new))
+    .subscribe();
+}
+async function refresh(){
+  if(mode!=='cloud'||!sb||!company||saving||dirty)return;
+  const {data}=await sb.from('company_data').select('data,updated_at').eq('company_id',company.id).single();
+  if(data)applyRemote(data);
+}
+setInterval(()=>{if(pendingRemote&&overlay.hidden&&!saving&&!dirty){const r=pendingRemote;pendingRemote=null;applyRemote(r);}},1500);
+addEventListener('focus',refresh);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh();});
+addEventListener('online',()=>{if(mode==='cloud'&&state)pushRemote();});
+addEventListener('offline',()=>{if(mode==='cloud')setSync('offline');});
+
+$('a-toggle').onclick=()=>{signup=!signup;
+  $('a-submit').textContent=signup?'Créer mon compte':'Se connecter';
+  $('a-toggle').textContent=signup?'Déjà un compte ? Se connecter':'Pas encore de compte ? Créer un compte';
+  $('a-login-intro').textContent=signup?'Crée ton compte patron. Ton commerce sera accessible depuis le site et l\'appli PC.':'Connecte-toi pour retrouver ton commerce sur tous tes appareils.';
+  $('a-pass').autocomplete=signup?'new-password':'current-password';authMsg('a-msg','');};
+$('a-login').addEventListener('submit',async ev=>{
+  ev.preventDefault();const email=$('a-email').value.trim(),password=$('a-pass').value;
+  if(!email||!password)return authMsg('a-msg','Indique ton e-mail et ton mot de passe.','err');
+  if(signup&&password.length<8)return authMsg('a-msg','Choisis un mot de passe de 8 caractères minimum.','err');
+  const b=$('a-submit');b.disabled=true;authMsg('a-msg','');
+  try{
+    if(signup){const {data,error}=await sb.auth.signUp({email,password,options:{emailRedirectTo:location.protocol.startsWith('http')?location.href.split('#')[0]:undefined}});if(error)throw error;
+      if(!data.session){authMsg('a-msg',"Compte créé ! Clique sur le lien reçu par e-mail pour le confirmer, puis connecte-toi ici.",'info');$('a-toggle').click();authMsg('a-msg',"Compte créé ! Clique sur le lien reçu par e-mail pour le confirmer, puis connecte-toi ici.",'info');b.disabled=false;return;}
+      user=data.session.user;}
+    else{const {data,error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;user=data.user;}
+    await afterLogin();
+  }catch(e){authMsg('a-msg',frError(e),'err');}
+  b.disabled=false;
+});
+$('a-company').addEventListener('submit',async ev=>{
+  ev.preventDefault();const name=$('a-cname').value.trim();
+  if(!name)return authMsg('a-cmsg','Indique le nom de ton commerce.','err');
+  const {data,error}=await sb.rpc('create_company',{p_name:name});
+  if(error)return authMsg('a-cmsg',frError(error),'err');
+  company={id:data,name,role:'owner'};await loadCompany();
+});
+$('a-demo').onclick=()=>{mode='demo';state=seed();state.shop='Au Pain Doré';weekStart=new Date(thisMonday);setSync('demo');showApp();};
+document.addEventListener('click',async ev=>{if(ev.target.closest('[data-logout]')){if(sb)await sb.auth.signOut();try{localStorage.removeItem('monkiosk-last-company');}catch(e){}location.reload();}});
+$('w-team').onclick=()=>openEmp(null);
+$('account').onclick=()=>{
+  openSheet(`<h2>Mon compte</h2>
+  <p class="muted small" style="margin:0">Connecté en tant que <strong>${esc(user?user.email:'')}</strong></p>
+  <label>Nom du commerce<input type="text" id="f-shop" value="${esc(state.shop||'')}"></label>
+  <div class="sheet-actions"><button type="button" class="btn danger" data-logout>Me déconnecter</button><button type="button" class="btn" id="f-cancel">Fermer</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'account'},'f-shop');
+};
+
+boot();
 </script>
 
 <script>if('serviceWorker' in navigator){addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}</script>
