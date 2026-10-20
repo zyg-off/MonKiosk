@@ -381,8 +381,9 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 
     <form id="a-join" hidden novalidate>
       <div style="display:flex;flex-direction:column;gap:14px">
-        <p>Ton responsable t'a donné un code de 6 caractères. Saisis-le pour rejoindre ton commerce.</p>
+        <p>Ton responsable t'a donné un code de 6 caractères. Saisis-le avec son adresse e-mail pour rejoindre ton commerce.</p>
         <label>Code du commerce<input type="text" id="a-code" maxlength="8" autocomplete="off" style="text-transform:uppercase;letter-spacing:.2em" placeholder="Ex. 4F9K2B"></label>
+        <label>E-mail de ton responsable<input type="email" id="a-oemail" autocomplete="off" placeholder="responsable@exemple.fr"></label>
         <label id="a-jwho" hidden>Qui es-tu ?<select id="a-jemp"></select></label>
         <div class="auth-msg err" id="a-jmsg" hidden></div>
         <button type="submit" class="btn primary" id="a-jsubmit">Continuer</button>
@@ -496,7 +497,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
     <div class="card" id="reports-card"><h2 class="hi" data-icon="alert">Signalements de l'équipe</h2><ul class="list" id="reports"></ul></div>
     <div class="card" id="accounts-card" hidden>
       <div class="card-head"><h2 class="hi" data-icon="key">Comptes salariés</h2></div>
-      <p class="muted small" style="margin:0;max-width:62ch">Donne ce code à tes salariés. Ils créent leur compte, saisissent le code et choisissent leur nom. Ils voient leur planning, badgent, cochent les tâches et demandent leurs congés, sans accès au reste.</p>
+      <p class="muted small" style="margin:0;max-width:62ch">Donne ce code et ton adresse e-mail à tes salariés : ils en ont besoin tous les deux pour rejoindre ton commerce. Pour plus de sécurité, renseigne l'e-mail du salarié dans sa fiche : seul ce compte pourra l'utiliser. Supprimer un salarié de l'équipe coupe aussi son accès.</p>
       <div class="row"><span class="big" id="join-code" style="letter-spacing:.15em">—</span><button type="button" class="btn sm" id="copy-code">Copier</button><button type="button" class="btn sm" id="regen-code">Nouveau code</button></div>
       <ul class="list" id="members"></ul>
     </div>
@@ -1003,7 +1004,7 @@ function renderTeam(){
   $('notes').innerHTML=N.map(n=>`<div class="note"><p><time>${fmtDM.format(fromKey(n.date))}</time>${esc(n.text)}${feat('espace')&&withAcc?`<span class="read-by" title="${esc((n.read||[]).map(empName).join(', '))}">Lu par ${(n.read||[]).length} / ${withAcc}${(n.read||[]).length?' : '+esc((n.read||[]).map(empName).join(', ')):''}</span>`:''}</p><button type="button" class="x" data-delnote="${n.id}" aria-label="Supprimer l'annonce">×</button></div>`).join('')||'<p class="empty-note">Aucune annonce.</p>';
   const tot=analyse(thisMonday).totals;
   $('staff').innerHTML=state.employees.map(e=>{const acc=members.some(m=>m.employee_id===e.id);const wk=weekWorked(e.id);
-    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${e.phone?' · '+esc(e.phone):''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
+    return `<li style="flex-wrap:wrap"><span class="grow"><strong>${esc(e.name)} ${acc?'<span class="chip info">Compte</span>':''}</strong><span class="muted small">${esc(e.poste)} · contrat ${e.contract} h${e.rate?' · '+eur2.format(e.rate)+'/h':''}${e.phone?' · '+esc(e.phone):''}${e.email?' · '+esc(e.email):''}${wk?' · pointé '+fh(wk)+' cette semaine':''}</span></span><span class="qty small">${fh(tot[e.id]||0)}</span><button type="button" class="btn sm" data-emp="${e.id}">Modifier</button></li>`;}).join('')||'<li class="empty-note">Ajoute ton premier salarié.</li>';
   renderPunches();renderAccounts();renderRecap();
   {const SW=[...state.swaps].filter(x=>x.status==='proposé'||x.status==='ouvert'||x.date>=k(addDays(today,-30))).sort((a,b)=>({proposé:0,ouvert:1}[a.status]??2)-({proposé:0,ouvert:1}[b.status]??2)||a.date.localeCompare(b.date));
    const when=x=>`${DAYS_LONG[(fromKey(x.date).getDay()+6)%7]} ${fmtDM.format(fromKey(x.date))} · ${x.s}–${x.e}`;
@@ -1109,7 +1110,8 @@ function openEmp(id){
   <label>Prénom<input type="text" id="f-name" value="${emp?esc(emp.name):''}" placeholder="Ex. Camille"></label>
   <div class="two"><label>Poste principal<select id="f-poste">${postes().map(o=>o.name).map(p=>`<option ${(emp&&emp.poste===p)?'selected':''}>${esc(p)}</option>`).join('')}</select></label>
   <label>Heures du contrat<input type="number" id="f-contract" min="1" max="48" value="${emp?emp.contract:35}"></label></div>
-  <div class="two"><label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label><label>Téléphone<input type="tel" id="f-phone2" value="${emp&&emp.phone?esc(emp.phone):''}" placeholder="06 12 34 56 78"></label></div>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
+  <div class="two"><label>Taux horaire brut (€)<input type="number" id="f-rate" min="0" step="0.01" value="${emp&&emp.rate?emp.rate:''}" placeholder="Ex. 12,50"></label><label>Téléphone<input type="tel" id="f-phone2" value="${emp&&emp.phone?esc(emp.phone):''}" placeholder="06 12 34 56 78"></label></div>
+  <label>E-mail du salarié (facultatif)<input type="email" id="f-email" value="${emp&&emp.email?esc(emp.email):''}" placeholder="Seul ce compte pourra utiliser cette fiche"></label>${actions(emp?"Retirer de l'équipe":'')}`,{type:'emp',id},'f-name');
 }
 function openPoste(i){
   const p=i==null?null:postes()[i];const used=new Set(postes().map(x=>x.color));
@@ -1182,7 +1184,8 @@ sheet.addEventListener('click',ev=>{
   if(ev.target.id==='f-del'){
     if(ctx.type!=='shift'&&!armed(ev.target,'Confirmer la suppression'))return;
     if(ctx.type==='shift'){const w=state.weeks[k(weekStart)];if(w&&w[ctx.e])delete w[ctx.e][ctx.d];toast('Créneau retiré');}
-    else if(ctx.type==='emp'){state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
+    else if(ctx.type==='emp'){const acc=members.find(m=>m.employee_id===ctx.id&&m.role==='employee');if(acc&&sb&&mode==='cloud')sb.rpc('remove_member',{cid:company.id,uid:acc.user_id}).then(()=>loadMembers());
+      state.employees=state.employees.filter(e=>e.id!==ctx.id);Object.values(state.weeks).forEach(w=>delete w[ctx.id]);toast('Salarié retiré');}
     else if(ctx.type==='stock'){state.stock=state.stock.filter(s=>s.id!==ctx.id);toast('Article supprimé');}
     else if(ctx.type==='list'){state.lists=state.lists.filter(x=>x.id!==ctx.id);toast('Liste supprimée');}
     else if(ctx.type==='equip'){state.equipments.splice(ctx.i,1);toast('Équipement supprimé. Les relevés passés sont conservés.');commit();openEquipments();return;}
@@ -1219,9 +1222,10 @@ sheet.addEventListener('submit',ev=>{
   }else if(ctx.type==='emp'){
     const name=$('f-name').value.trim();if(!name)return toast('Indique un prénom');
     const contract=Math.max(1,Math.min(48,parseInt($('f-contract').value,10)||35));
-    const rate=Math.max(0,parseFloat($('f-rate').value)||0),phone=$('f-phone2').value.trim().slice(0,20);
-    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate,phone});
-    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate,phone});
+    const rate=Math.max(0,parseFloat($('f-rate').value)||0),phone=$('f-phone2').value.trim().slice(0,20),email=$('f-email').value.trim().toLowerCase();
+    if(email&&!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return toast("L'e-mail du salarié n'est pas valide");
+    if(ctx.id)Object.assign(state.employees.find(x=>x.id===ctx.id),{name,poste:$('f-poste').value,contract,rate,phone,email});
+    else state.employees.push({id:uid(),name,poste:$('f-poste').value,contract,rate,phone,email});
     toast('Équipe mise à jour');
   }else if(ctx.type==='leave'){
     if(!state.employees.length)return toast("Ajoute d'abord un salarié");
@@ -1580,6 +1584,7 @@ async function loadEmployee(quiet){
   if(!quiet)authStep('a-loading');
   const {data,error}=await sb.rpc('employee_view',{cid:company.id,p_day:todayKey});
   if(error){if(quiet)return;authStep('a-company');authMsg('a-cmsg',frError(error),'err');return;}
+  if(data&&data.removed)return accessRemoved();
   mode='employee';eView=data;state={postes:data.postes||[]};
   if(quiet&&!$('v-employee').hidden){renderEmployee();return;}
   showEmployee();
@@ -1701,9 +1706,16 @@ function exportIcs(){
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'}));a.download='planning-monkiosk.ics';document.body.appendChild(a);a.click();a.remove();
   toast(`${ev.length} créneau${ev.length>1?'x':''} exporté${ev.length>1?'s':''} : ouvre le fichier pour les ajouter à ton agenda`);
 }
+function accessRemoved(){
+  memberships=memberships.filter(m=>m.id!==(company&&company.id));try{localStorage.removeItem('monkiosk-company');}catch(e){}
+  const next=memberships[0];company=null;eView=null;
+  if(next){openCompany(next);toast("Ton accès à ce commerce a été retiré par le responsable");return;}
+  authStep('a-company');authMsg('a-cmsg',"Ton accès à ce commerce a été retiré par le responsable.",'err');
+}
 async function empAction(action,payload){
   const {data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:action,p_payload:payload,p_day:todayKey});
   if(error){toast(frError(error));return false;}
+  if(data&&data.removed){accessRemoved();return false;}
   eView=data;state={postes:data.postes||[]};renderEmployee();return true;
 }
 document.addEventListener('click',async e2=>{
@@ -1730,7 +1742,7 @@ document.addEventListener('click',async e2=>{
 document.addEventListener('change',e2=>{const c=e2.target;if(mode==='employee'&&c.dataset&&c.dataset.etask)empAction('task',{task:c.dataset.etask,done:c.checked});});
 document.addEventListener('change',async e2=>{const c=e2.target;if(mode!=='employee'||!c.dataset||!c.dataset.elossq)return;
   const q=Math.max(0,parseFloat(c.value)||0),{data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:'loss',p_payload:{product:c.dataset.elossq,qty:q},p_day:todayKey});
-  if(error)return toast(frError(error));eView=data;
+  if(error)return toast(frError(error));if(data&&data.removed)return accessRemoved();eView=data;
   const ent=(data.losses||{})[c.dataset.elossq],cell=document.querySelector(`[data-v-elossq="${c.dataset.elossq}"]`);if(cell)cell.textContent=eur2.format(ent?ent.v:0);
   const t=document.querySelector('[data-total-elossq]');if(t)t.textContent=eur2.format(Object.values(data.losses||{}).reduce((p,x)=>p+(x.v||0),0));});
 setInterval(()=>{if(mode==='employee'&&!document.hidden)loadEmployee(true);},60000);
@@ -1738,27 +1750,27 @@ document.addEventListener('click',async e2=>{
   const b=e2.target.closest('[data-estock]');if(!b||mode!=='employee')return;const[item,dl]=b.dataset.estock.split(':');
   const cell=document.querySelector(`[data-eq="${item}"]`),it=(eView.stock||[]).find(x=>x.id===item);if(it){it.qty=Math.max(0,Number(it.qty)+Number(dl));if(cell)cell.textContent=num(it.qty);}
   const {data,error}=await sb.rpc('employee_action',{cid:company.id,p_action:'stock',p_payload:{item,delta:Number(dl)},p_day:todayKey});
-  if(error){toast(frError(error));return loadEmployee(true);}eView.stock=data.stock;});
+  if(error){toast(frError(error));return loadEmployee(true);}if(data&&data.removed)return accessRemoved();eView.stock=data.stock;});
 
 /* ---------- Créer, rejoindre, changer de commerce ---------- */
 let joinPreview=null;
 $('a-join').addEventListener('submit',async e2=>{
-  e2.preventDefault();const code=$('a-code').value.trim().toUpperCase();if(!code)return authMsg('a-jmsg','Saisis le code du commerce.','err');
+  e2.preventDefault();const code=$('a-code').value.trim().toUpperCase(),oemail=$('a-oemail').value.trim();if(!code||!oemail)return authMsg('a-jmsg','Saisis le code du commerce et l\'e-mail de ton responsable.','err');
   const btn=$('a-jsubmit');btn.disabled=true;
   try{
-    if(!joinPreview){const {data,error}=await sb.rpc('join_preview',{p_code:code});if(error)return authMsg('a-jmsg',frError(error),'err');
-      if(!data.employees.length)return authMsg('a-jmsg',`Aucune fiche salarié disponible chez ${data.company}. Demande à ton responsable de t'ajouter dans l'équipe.`,'err');
+    if(!joinPreview){const {data,error}=await sb.rpc('join_preview',{p_code:code,p_owner_email:oemail});if(error)return authMsg('a-jmsg',frError(error),'err');
+      if(!data.employees.length)return authMsg('a-jmsg',`Aucune fiche disponible pour toi chez ${data.company}. Demande à ton responsable de t'ajouter dans l'équipe, avec ton adresse e-mail si besoin.`,'err');
       joinPreview=data;$('a-jemp').innerHTML=data.employees.map(x=>`<option value="${esc(x.id)}">${esc(x.name)}</option>`).join('');
       $('a-jwho').hidden=false;btn.textContent=`Rejoindre ${data.company}`;authMsg('a-jmsg','');return;}
-    const {data,error}=await sb.rpc('join_company',{p_code:code,p_employee:$('a-jemp').value});if(error)return authMsg('a-jmsg',frError(error),'err');
+    const {data,error}=await sb.rpc('join_company',{p_code:code,p_employee:$('a-jemp').value,p_owner_email:oemail});if(error)return authMsg('a-jmsg',frError(error),'err');
     joinPreview=null;try{localStorage.setItem('monkiosk-company',data);}catch(e){}await afterLogin();
   }finally{btn.disabled=false;}
 });
-$('a-code').addEventListener('input',()=>{joinPreview=null;$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';});
+['a-code','a-oemail'].forEach(id=>$(id).addEventListener('input',()=>{joinPreview=null;$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';}));
 document.addEventListener('click',e2=>{
   const t=e2.target.closest('[data-joinco],[data-newco],[data-back],[data-switch]');if(!t)return;
   if(!overlay.hidden)closeSheet();
-  if('joinco' in t.dataset){joinPreview=null;$('a-code').value='';$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';authMsg('a-jmsg','');authStep('a-join');$('a-code').focus();}
+  if('joinco' in t.dataset){joinPreview=null;$('a-code').value='';$('a-oemail').value='';$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';authMsg('a-jmsg','');authStep('a-join');$('a-code').focus();}
   else if('newco' in t.dataset){authMsg('a-cmsg','');$('a-cname').value='';authStep('a-company');$('a-cname').focus();}
   else if('back' in t.dataset){if(company&&(mode==='employee'||state&&state.employees))mode==='employee'?showEmployee():showApp();else authStep('a-company');}
   else if(t.dataset.switch){const m=memberships.find(x=>x.id===t.dataset.switch);if(m)openCompany(m);}
@@ -1774,7 +1786,7 @@ function authStep(step){
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
   if(/Could not find the function|function .* does not exist|schema cache/i.test(m))return 'La base de données doit être mise à jour : lance le dernier fichier de migration dans Supabase.';
-  if(/^(Code invalide|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème|Les échanges|Ce jour est déjà passé|Tu ne travailles pas|Une demande existe|Échange introuvable|Cet échange|Tu travailles déjà|Tu ne peux pas annuler)/.test(m))return m+'.';
+  if(/^(Code invalide|Code ou e-mail du responsable incorrect|Cette fiche est réservée|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème|Les échanges|Ce jour est déjà passé|Tu ne travailles pas|Une demande existe|Échange introuvable|Cet échange|Tu travailles déjà|Tu ne peux pas annuler)/.test(m))return m+'.';
   if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
   if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
   if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
