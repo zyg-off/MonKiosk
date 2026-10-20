@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#2453c9">
+<meta name="theme-color" content="#b5512f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="MonKiosk">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -19,7 +19,7 @@
 /* Layout: app shell with one view at a time and a bottom tab bar. Summary first (Accueil), detail in each module. */
 :root{
   --bg:#f2f4f7; --surface:#ffffff; --ink:#17202b; --muted:#5a6474; --line:#dce1e8; --soft:#e9edf2;
-  --accent:#2453c9; --accent-ink:#ffffff; --accent-soft:#e3eafb;
+  --accent:#b5512f; --accent-ink:#ffffff; --accent-soft:#fbe7de;
   --four:#f4e2c6; --four-ink:#6a4210; --pat:#f6dbe5; --pat-ink:#7a2347; --vente:#d5e7f5; --vente-ink:#16486c; --net:#e1e5ea; --net-ink:#3a4451; --c4:#dcefd8; --c4-ink:#2a5c26; --c5:#d2eeeb; --c5-ink:#1c5652; --c6:#fbdfcd; --c6-ink:#7a3910; --c7:#f5edc0; --c7-ink:#5d4f0f;
   --leave:#ece6fb; --leave-ink:#4b3a8c;
   --crit:#b9301d; --crit-bg:#fbe5e0; --warn:#9a5c00; --warn-bg:#fcefd6; --ok:#2c7347; --ok-bg:#dff1e5;
@@ -29,14 +29,14 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#11161d; --surface:#19202a; --ink:#e7ebf1; --muted:#9aa4b3; --line:#2b3441; --soft:#222a35;
-  --accent:#7d9dff; --accent-ink:#0e1420; --accent-soft:#1f2b48;
+  --accent:#f0947c; --accent-ink:#1f0d07; --accent-soft:#3a2119;
   --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df; --c4:#20391e; --c4-ink:#bfe6b8; --c5:#173b39; --c5-ink:#b4e8e3; --c6:#4a2a16; --c6-ink:#f8c9a8; --c7:#3d3510; --c7-ink:#efe0a0;
   --leave:#2e2650; --leave-ink:#d4caff;
   --crit:#ff8a76; --crit-bg:#3d1d18; --warn:#f2bb5c; --warn-bg:#3a2c12; --ok:#7fd3a0; --ok-bg:#16301f;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11161d; --surface:#19202a; --ink:#e7ebf1; --muted:#9aa4b3; --line:#2b3441; --soft:#222a35;
-  --accent:#7d9dff; --accent-ink:#0e1420; --accent-soft:#1f2b48;
+  --accent:#f0947c; --accent-ink:#1f0d07; --accent-soft:#3a2119;
   --four:#4a3518; --four-ink:#f5d9ac; --pat:#4d2233; --pat-ink:#f7c4d6; --vente:#1c3a52; --vente-ink:#bfe0f8; --net:#2c343f; --net-ink:#cfd6df; --c4:#20391e; --c4-ink:#bfe6b8; --c5:#173b39; --c5-ink:#b4e8e3; --c6:#4a2a16; --c6-ink:#f8c9a8; --c7:#3d3510; --c7-ink:#efe0a0;
   --leave:#2e2650; --leave-ink:#d4caff;
   --crit:#ff8a76; --crit-bg:#3d1d18; --warn:#f2bb5c; --warn-bg:#3a2c12; --ok:#7fd3a0; --ok-bg:#16301f;
@@ -863,8 +863,10 @@ let state=null,mode='cloud',sb=null,user=null,company=null,saveTimer=null,punchC
 const cacheKey=()=>'monkiosk-cache-'+(company?company.id:'x');
 function readCache(){try{const r=localStorage.getItem(cacheKey());return r?JSON.parse(r):null;}catch(e){return null;}}
 function hexToRgb(h){const m=/^#?([0-9a-f]{6})$/i.exec(h||'');if(!m)return null;const n=parseInt(m[1],16);return [n>>16&255,n>>8&255,n&255];}
-function applyBranding(b){const root=document.documentElement,rgb=hexToRgb(b&&b.accent);
-  if(rgb){root.style.setProperty('--accent',b.accent);root.style.setProperty('--accent-soft',`rgba(${rgb.join(',')},.16)`);root.style.setProperty('--accent-ink','#ffffff');}
+const DEFAULT_ACCENT='#b5512f';
+function brandAccent(b){const a=b&&b.accent;return a&&a!=='#2453c9'?a:DEFAULT_ACCENT;}
+function applyBranding(b){const root=document.documentElement,acc=brandAccent(b),rgb=acc!==DEFAULT_ACCENT&&hexToRgb(acc);
+  if(rgb){root.style.setProperty('--accent',acc);root.style.setProperty('--accent-soft',`rgba(${rgb.join(',')},.16)`);root.style.setProperty('--accent-ink','#ffffff');}
   else{root.style.removeProperty('--accent');root.style.removeProperty('--accent-soft');root.style.removeProperty('--accent-ink');}
   const brand=document.querySelector('.nav-brand');if(brand){const old=brand.querySelector('img.logo');if(b&&b.logo){brand.querySelector('svg').style.display='none';if(old)old.src=b.logo;else brand.insertAdjacentHTML('afterbegin',`<img class="logo" src="${b.logo}" alt="">`);}else{brand.querySelector('svg').style.display='';if(old)old.remove();}}}
 function applyTheme(){let t='auto';try{t=localStorage.getItem('monkiosk-theme')||'auto';}catch(e){}if(t==='auto')delete document.documentElement.dataset.theme;else document.documentElement.dataset.theme=t;}
@@ -2374,7 +2376,7 @@ $('nav-account').onclick=()=>mode==='demo'?location.reload():openAccountPage();
 function openSettings(){
   const st=state.settings,RU=rules(),H=st.hours||{},NK=Object.assign({temps:true,stock:true,conges:true,signalements:true,echanges:true,messages:true},st.notifyKinds||{});
   const hm2=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
-  const accents=['#2453c9','#0f766e','#b45309','#be123c','#7c3aed','#15803d','#0e7490','#1f2937'];
+  const accents=['#b5512f','#2a5bd7','#0f766e','#be123c','#7c3aed','#15803d','#0e7490','#1f2937'];
   openSheet(`<h2>Paramètres du commerce</h2>
   <h3>Horaires d'ouverture</h3><p class="muted small" style="margin:0">Une alerte apparaît si la boutique est ouverte sans personne.</p>
   <div style="display:flex;flex-direction:column;gap:6px">${DAYS_LONG.map((dl,d)=>{const h=H[d]||{};return `<div class="row" style="gap:8px;flex-wrap:nowrap"><label style="flex-direction:row;align-items:center;gap:6px;min-width:120px;color:var(--ink)"><input type="checkbox" data-hopen="${d}" ${st.hours&&!h.closed?'checked':''}> ${dl}</label><input type="time" id="h-o-${d}" value="${h.open||'07:00'}" aria-label="Ouverture ${dl}"><input type="time" id="h-c-${d}" value="${h.close||'19:30'}" aria-label="Fermeture ${dl}"></div>`;}).join('')}</div>
@@ -2391,13 +2393,13 @@ function openSettings(){
   <label class="switch" style="border:0;padding:0"><input type="checkbox" id="r-hol" ${st.holidays!==false?'checked':''}><span class="grow"><strong>Jours fériés</strong><span class="muted small">Les afficher dans le planning et signaler ceux qui sont travaillés.</span></span></label>
   <h3>Apparence</h3>
   <div class="row" style="gap:12px;align-items:center">${st.logo?`<img src="${st.logo}" alt="Logo" style="width:56px;height:56px;border-radius:14px;object-fit:cover">`:`<span class="logo-default" title="Logo MonKiosk">${LOGO_SVG}</span><span class="muted small">Logo MonKiosk par défaut</span>`}<label class="btn sm" for="a-logo" style="cursor:pointer;flex-direction:row">${st.logo?'Changer le logo':'Ajouter un logo'}</label><input type="file" id="a-logo" accept="image/*" hidden>${st.logo?'<button type="button" class="btn sm danger" data-logodel>Retirer</button>':''}</div>
-  <div class="swatches">${accents.map(c=>`<button type="button" data-accent="${c}" style="background:${c}" aria-label="Couleur ${c}" aria-pressed="${(st.accent||'#2453c9')===c}"></button>`).join('')}</div>
+  <div class="swatches">${accents.map(c=>`<button type="button" data-accent="${c}" style="background:${c}" aria-label="Couleur ${c}" aria-pressed="${brandAccent(st)===c}"></button>`).join('')}</div>
   <h3>Notifications</h3><div>${[['temps','Températures et checklists non faites'],['stock','Articles à commander'],['conges','Demandes de congé'],['signalements',"Signalements de l'équipe"],['echanges','Échanges de créneau à valider'],['messages','Nouveaux messages']].map(([kk,l])=>`<label class="switch"><input type="checkbox" data-nkind="${kk}" ${NK[kk]?'checked':''}><span class="grow"><strong>${l}</strong></span></label>`).join('')}</div>
   <h3>Chiffres</h3>
   <div class="two"><label>Charges patronales (%)<input type="number" id="f-charges" min="0" max="100" step="1" value="${st.charges}"></label><label>Objectif mensuel (€)<input type="number" id="f-goal" min="0" step="100" value="${st.goal||''}" placeholder="Ex. 25000"></label></div>
   <label>E-mail de l'expert-comptable (pour l'export de paie)<input type="email" id="f-acc" value="${esc(st.accountant||'')}" placeholder="cabinet@exemple.fr"></label>
   <div class="two"><label>Rappel des relevés à partir de<select id="f-hour">${[...Array(17).keys()].map(i=>i+5).map(h=>`<option value="${h}" ${st.tempHour===h?'selected':''}>${h} h</option>`).join('')}</select></label><label>Notifications<span style="display:flex;gap:8px;align-items:center;min-height:46px;color:var(--ink);font-weight:500"><input type="checkbox" id="f-notify" ${st.notify?'checked':''}> Activer sur cet appareil</span></label></div>
-  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'settings',accent:st.accent||'#2453c9'},null);
+  <div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Annuler</button><button type="submit" class="btn primary">Enregistrer</button></div>`,{type:'settings',accent:brandAccent(st)},null);
 }
 function openModules(){
   const m=state.settings.modules||{};
@@ -2413,9 +2415,9 @@ async function openAdmin(){
   if(error){sheet.innerHTML=`<h2>Administration MonKiosk</h2><p class="muted small" style="margin:0">${esc(frError(error))}</p><div class="sheet-actions"><button type="button" class="btn" id="f-cancel">Fermer</button></div>`;return;}
   const prem=MODULES.filter(x=>x.premium),cfg=platformCfg||{},P=cfg.plans||{};
   sheet.innerHTML=`<h2>Administration MonKiosk</h2>
-  <h3>Formules et paiement</h3><p class="muted small" style="margin:0">Prix affichés aux commerçants et liens de paiement Stripe (« Payment Links »). Sans lien, le bouton affiche « Bientôt disponible », ou propose de t'écrire si un e-mail de contact est rempli.</p>
-  ${PLAN_ORDER.map(p=>`<div class="two"><label>${PLAN_LABEL[p]} : prix par mois (€)<input type="number" min="0" step="0.01" id="cf-price-${p}" value="${P[p]&&P[p].price!=null?P[p].price:''}"></label><label>Lien de paiement ${PLAN_LABEL[p]}<input type="url" id="cf-link-${p}" value="${esc((P[p]&&P[p].link)||'')}" placeholder="${p==='essentiel'?'Gratuit : laisse vide':'https://buy.stripe.com/...'}"></label></div>`).join('')}
-  <div class="two"><label>Lien « Gérer mon abonnement » (portail client Stripe)<input type="url" id="cf-portal" value="${esc(cfg.portal||'')}" placeholder="https://billing.stripe.com/p/login/..."></label><label>E-mail de contact<input type="email" id="cf-contact" value="${esc(cfg.contact||'')}" placeholder="contact@exemple.fr"></label></div>
+  <h3>Formules et paiement</h3><p class="muted small" style="margin:0">Prix affichés aux commerçants et liens de paiement Polar (« Checkout Links »). Sans lien, le bouton affiche « Bientôt disponible », ou propose de t'écrire si un e-mail de contact est rempli.</p>
+  ${PLAN_ORDER.map(p=>`<div class="two"><label>${PLAN_LABEL[p]} : prix par mois (€)<input type="number" min="0" step="0.01" id="cf-price-${p}" value="${P[p]&&P[p].price!=null?P[p].price:''}"></label><label>Lien de paiement ${PLAN_LABEL[p]}<input type="url" id="cf-link-${p}" value="${esc((P[p]&&P[p].link)||'')}" placeholder="${p==='essentiel'?'Gratuit : laisse vide':'https://buy.polar.sh/polar_cl_...'}"></label></div>`).join('')}
+  <div class="two"><label>Lien « Gérer mon abonnement » (portail client Polar)<input type="url" id="cf-portal" value="${esc(cfg.portal||'')}" placeholder="https://polar.sh/ton-organisation/portal"></label><label>E-mail de contact<input type="email" id="cf-contact" value="${esc(cfg.contact||'')}" placeholder="contact@exemple.fr"></label></div>
   <label class="switch" style="border:0;padding:0"><input type="checkbox" id="cf-push" ${cfg.push?'checked':''}><span class="grow"><strong>Notifications sur téléphone</strong><span class="muted small">À cocher une fois la fonction « notify » créée dans Supabase.</span></span></label>
   <button type="button" class="btn primary sm" id="cf-save" style="align-self:flex-start">Enregistrer les réglages</button>
   <h3>Commerces (${data.length})</h3>
@@ -2492,11 +2494,11 @@ function openPlans(){
     let act;
     if(isCur)act='<span class="btn" aria-disabled="true">Ta formule actuelle</span>';
     else if(p==='essentiel')act=cfg.portal?`<a class="btn" href="${esc(cfg.portal)}" target="_blank" rel="noopener">Revenir à Essentiel</a>`:'';
-    else if(d.link&&/^https:\/\//.test(d.link))act=`<a class="btn primary" href="${esc(d.link+(d.link.includes('?')?'&':'?')+'client_reference_id='+company.id+'__'+p+(mail?'&prefilled_email='+encodeURIComponent(mail):''))}" target="_blank" rel="noopener">Choisir ${PLAN_LABEL[p]}</a>`;
+    else if(d.link&&/^https:\/\//.test(d.link))act=`<a class="btn primary" href="${esc(d.link+(d.link.includes('?')?'&':'?')+'reference_id='+company.id+'__'+p+'&locale=fr'+(mail?'&customer_email='+encodeURIComponent(mail):''))}" target="_blank" rel="noopener">Choisir ${PLAN_LABEL[p]}</a>`;
     else if(cfg.contact)act=`<a class="btn primary" href="mailto:${esc(cfg.contact)}?subject=${encodeURIComponent('Formule '+PLAN_LABEL[p]+' – '+(state.shop||''))}">Demander ${PLAN_LABEL[p]}</a>`;
     else act='<span class="btn" aria-disabled="true">Bientôt disponible</span>';
     return `<div class="plan${isCur?' cur':''}${p==='pro'?' pop':''}">${p==='pro'?'<span class="chip ok">Conseillée</span>':''}<h3>${esc(d.name||PLAN_LABEL[p])}</h3><div class="price">${price?`<span class="big">${num(price,2)} €</span><span class="muted small">par mois</span>`:'<span class="big">Gratuit</span>'}</div>${p==='essentiel'?'':`<p class="lead">${inc[0]}</p>`}<ul>${(p==='essentiel'?inc:inc.slice(1)).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${act}</div>`;};
-  openSheet(`<h2>Formules MonKiosk</h2><p class="muted small" style="margin:0">Change de formule quand tu veux. Paiement sécurisé par Stripe, sans engagement.</p>
+  openSheet(`<h2>Formules MonKiosk</h2><p class="muted small" style="margin:0">Change de formule quand tu veux. Paiement sécurisé par Polar, sans engagement.</p>
   <div class="plans">${PLAN_ORDER.map(card).join('')}</div>
   ${cfg.portal&&cur!=='essentiel'?`<p class="muted small" style="margin:0">Factures, carte bancaire, résiliation : <a href="${esc(cfg.portal)}" target="_blank" rel="noopener">gérer mon abonnement</a>.</p>`:''}
   <p class="muted small" style="margin:0">Après le paiement, reviens dans MonKiosk : ta formule s'active toute seule en quelques secondes.</p>
