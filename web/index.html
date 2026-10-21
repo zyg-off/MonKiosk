@@ -1065,7 +1065,8 @@ const MODULES=[
   {key:'previsions',name:'Prévisions de ventes',desc:'CA attendu jour par jour et conseil sur l\'effectif à prévoir.',premium:true},
   {key:'paie',name:'Export expert-comptable',desc:'Heures, majorations et absences du mois, prêtes pour la paie.',premium:true},
   {key:'documents',name:'Documents salariés',desc:'Contrats, fiches de paie et attestations, rangés par salarié.',premium:true},
-  {key:'tablette',name:'Mode tablette',desc:'Une tablette en boutique pour badger, cocher les tâches et noter les températures.',premium:true}
+  {key:'tablette',name:'Mode tablette',desc:'Une tablette en boutique pour badger, cocher les tâches et noter les températures.',premium:true},
+  {key:'multi',name:'Boutiques regroupées',desc:'Un tableau commun pour suivre toutes tes boutiques.',premium:true}
 ];
 function unlocked(key){const m=MODULES.find(x=>x.key===key);if(!m||!m.premium||mode==='demo')return true;return !!(company&&company.features&&company.features[key]===true);}
 const MANAGER_HIDDEN=['ventes','couts','stats','rentabilite','previsions','paie'];
@@ -2532,7 +2533,7 @@ function planPrice(p){const d=((platformCfg&&platformCfg.plans)||{})[p]||{};retu
 const fmtEur=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})+' €';
 function plansGridHTML(nEmp){
   const cfg=platformCfg||{},cur=company&&company.plan,mail=user&&user.email||'';
-  const base=['Planning, équipe et congés','Checklists et relevés de température','Stock, commandes et ventes','Pertes et invendus','Plusieurs boutiques regroupées'];
+  const base=['Planning, équipe et congés','Checklists et relevés de température','Stock, commandes et ventes','Pertes et invendus'];
   const card=p=>{const d=planPrice(p),isCur=cur===p&&company.active!==false;
     const inc=p==='essentiel'?base:[p==='pro'?'Tout Essentiel, plus :':'Tout Pro, plus :',...planNames(p).filter(n=>p==='pro'||!planNames('pro').includes(n))];
     let act;
@@ -2722,7 +2723,7 @@ document.addEventListener('change',ev=>{if(ev.target.id==='py-month'||ev.target.
 let groupData=null;
 async function loadGroup(){
   const owned=memberships.filter(m=>m.role==='owner');
-  if(mode!=='cloud'||!sb||owned.length<2){groupData=null;renderGroup();return;}
+  if(mode!=='cloud'||!sb||owned.length<2||!feat('multi')){groupData=null;renderGroup();return;}
   const {data,error}=await sb.from('company_data').select('company_id,data').in('company_id',owned.map(m=>m.id));
   if(!error){groupData=data||[];renderGroup();}
 }
@@ -2737,7 +2738,7 @@ function shopFigures(s){
 }
 function renderGroup(){
   const card=$('group-card');if(!card)return;
-  if(!groupData||mode!=='cloud'||memberships.filter(m=>m.role==='owner').length<2){card.hidden=true;return;}
+  if(!groupData||mode!=='cloud'||!feat('multi')||memberships.filter(m=>m.role==='owner').length<2){card.hidden=true;return;}
   const rows=memberships.filter(m=>m.role==='owner').map(m=>{const isCur=company&&m.id===company.id,row=groupData.find(g=>g.company_id===m.id);
     const s=isCur?state:normalize(row&&row.data,m.name);return {m,isCur,name:isCur?(state.shop||m.name):(s.shop||m.name),f:shopFigures(s)};});
   const tot=rows.reduce((p,r)=>({week:p.week+r.f.week,month:p.month+r.f.month,todo:p.todo+r.f.todo,team:p.team+r.f.team}),{week:0,month:0,todo:0,team:0});
