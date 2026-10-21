@@ -383,7 +383,9 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .pw-inner>p{margin:0;max-width:62ch}
 .pw-head{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:1.2rem}.pw-logo{width:44px;height:44px;display:flex}.pw-logo svg{width:100%;height:100%}
 .plan .per{font-weight:700;color:var(--accent);font-size:.9rem}
-.pick-list li{padding:10px 0}
+.pick-list{margin:0;padding:0}.pick-list li:first-child,.pick-list li:last-child{border:1px solid var(--line)!important;padding:12px 14px!important}.pick-list li{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;margin-bottom:8px;flex-wrap:nowrap!important}
+.pick-list li .grow{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.pick-list li strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth-card .pick-list .btn{width:auto;flex:none;min-height:38px;font-size:.9rem;padding:8px 18px}
 .adm-plan{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
 a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;color:var(--ink)}a.btn.primary{color:var(--accent-ink,#fff)}
 .sheet label.switch,.acc-grid label.switch{flex-direction:row;align-items:flex-start;font-size:.92rem;font-weight:500;color:var(--ink)}
