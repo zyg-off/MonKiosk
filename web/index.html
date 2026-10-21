@@ -383,6 +383,7 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .pw-inner>p{margin:0;max-width:62ch}
 .pw-head{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:1.2rem}.pw-logo{width:44px;height:44px;display:flex}.pw-logo svg{width:100%;height:100%}
 .plan .per{font-weight:700;color:var(--accent);font-size:.9rem}
+.pick-list li{padding:10px 0}
 .adm-plan{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
 a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;color:var(--ink)}a.btn.primary{color:var(--accent-ink,#fff)}
 .sheet label.switch,.acc-grid label.switch{flex-direction:row;align-items:flex-start;font-size:.92rem;font-weight:500;color:var(--ink)}
@@ -475,6 +476,13 @@ body.tablet-on{overflow:hidden}body.tablet-on .titlebar{z-index:26}
         <button type="button" class="linkbtn" data-back style="align-self:center">Retour</button>
       </div>
     </form>
+
+    <div id="a-pick" hidden style="display:flex;flex-direction:column;gap:14px">
+      <p>Quel commerce veux-tu ouvrir ?</p>
+      <ul class="list pick-list" id="a-picklist"></ul>
+      <div class="row" style="justify-content:center;gap:8px"><button type="button" class="btn sm" data-newco>Créer un commerce</button><button type="button" class="btn sm" data-joinco>Rejoindre avec un code</button></div>
+      <button type="button" class="linkbtn" data-logout style="align-self:center">Me déconnecter</button>
+    </div>
 
     <div id="a-config" hidden style="display:flex;flex-direction:column;gap:14px">
       <p>MonKiosk n'est pas encore relié à sa base de données. Vérifie le fichier config.js.</p>
@@ -2230,7 +2238,7 @@ document.addEventListener('click',e2=>{
   if(!overlay.hidden)closeSheet();
   if('joinco' in t.dataset){joinPreview=null;$('a-code').value='';$('a-oemail').value='';$('a-jwho').hidden=true;$('a-jsubmit').textContent='Continuer';authMsg('a-jmsg','');authStep('a-join');$('a-code').focus();}
   else if('newco' in t.dataset){authMsg('a-cmsg','');$('a-cname').value='';authStep('a-company');$('a-cname').focus();}
-  else if('back' in t.dataset){if(company&&(mode==='employee'||state&&state.employees))mode==='employee'?showEmployee():showApp();else authStep('a-company');}
+  else if('back' in t.dataset){if(isAdmin&&memberships.length&&!(company&&(mode==='employee'||mode==='cloud')&&state)){showPicker();return;}if(company&&(mode==='employee'||state&&state.employees))mode==='employee'?showEmployee():showApp();else authStep('a-company');}
   else if(t.dataset.switch){const m=memberships.find(x=>x.id===t.dataset.switch);if(m)openCompany(m);}
 });
 
@@ -2239,8 +2247,13 @@ let signup=false;
 function authStep(step){
   hidePaywall();
   $('appmain').hidden=true;$('nav').hidden=true;$('auth').hidden=false;document.body.classList.remove('with-nav');
-  ['a-loading','a-login','a-company','a-config','a-join'].forEach(id=>$(id).hidden=id!==step);
-  $('a-cback').hidden=!company;
+  ['a-loading','a-login','a-company','a-config','a-join','a-pick'].forEach(id=>$(id).hidden=id!==step);
+  $('a-cback').hidden=!company&&!(isAdmin&&memberships.length);
+}
+function showPicker(pref){
+  const R2={owner:'Patron',manager:'Manager',employee:'Salarié'};
+  $('a-picklist').innerHTML=memberships.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong><span class="muted small">${R2[m.role]||''}${m.id===pref?' · ouvert la dernière fois':''}</span></span><button type="button" class="btn sm ${m.id===pref?'primary':''}" data-switch="${m.id}">Ouvrir</button></li>`).join('')||'<li class="empty-note">Aucun commerce pour l\'instant.</li>';
+  authStep('a-pick');
 }
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
@@ -2279,6 +2292,8 @@ async function afterLogin(){
   memberships=data.map(m=>({id:m.company_id,name:(m.companies&&m.companies.name)||'Mon commerce',role:m.role}));
   if(!memberships.length){authStep('a-company');$('a-cname').focus();return;}
   let pref=null;try{pref=localStorage.getItem('monkiosk-company');}catch(e){}
+  await adm;
+  if(isAdmin)return showPicker(pref);
   await openCompany(memberships.find(m=>m.id===pref)||memberships[0]);
 }
 async function openCompany(m){
