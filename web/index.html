@@ -376,6 +376,14 @@ input[type=date]::-webkit-calendar-picker-indicator,input[type=month]::-webkit-c
 .plan{border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
 .plan.pop{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}.plan.cur{background:var(--accent-soft)}
 .plan h3{margin:0}.plan .price{display:flex;align-items:baseline;gap:6px}.plan ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:.88rem;flex:1}
+/* écran sans abonnement */
+.paywall{min-height:100vh;display:flex;justify-content:center;padding:32px max(16px,env(safe-area-inset-right,0px)) 40px max(16px,env(safe-area-inset-left,0px))}
+.pw-inner{width:100%;max-width:980px;display:flex;flex-direction:column;gap:18px}
+.pw-inner h1{font-family:var(--f-display);font-weight:800;font-size:clamp(1.5rem,4vw,2.2rem);line-height:1.15;margin:0;letter-spacing:-.02em}
+.pw-inner>p{margin:0;max-width:62ch}
+.pw-head{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-size:1.2rem}.pw-logo{width:44px;height:44px;display:flex}.pw-logo svg{width:100%;height:100%}
+.plan .per{font-weight:700;color:var(--accent);font-size:.9rem}
+.adm-plan{display:flex;flex-direction:column;gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px}
 a.btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;color:var(--ink)}a.btn.primary{color:var(--accent-ink,#fff)}
 .sheet label.switch,.acc-grid label.switch{flex-direction:row;align-items:flex-start;font-size:.92rem;font-weight:500;color:var(--ink)}
 .switch .grow{display:flex;flex-direction:column;gap:2px}
@@ -477,6 +485,7 @@ body.tablet-on{overflow:hidden}body.tablet-on .titlebar{z-index:26}
   </div>
 </div>
 
+<div class="paywall" id="paywall" hidden></div>
 <div class="app" id="appmain" hidden>
   <header class="top">
     <div class="brand"><small id="shopname">MonKiosk</small><h1 id="viewtitle">Accueil</h1></div>
@@ -933,7 +942,7 @@ async function pushRemote(){
   }catch(e){setSync(navigator.onLine?'error':'offline');clearTimeout(saveTimer);saveTimer=setTimeout(()=>{if(dirty)pushRemote();},8000);}
   saving=false;
 }
-function commit(){save();render();}
+function commit(){save();render();if(typeof reportUsage==='function')reportUsage();}
 function logWho(){if(company&&company.role==='manager'){const m=members.find(x=>x.user_id===(user&&user.id));if(m)return empName(m.employee_id)+' (manager)';}return (user&&user.email||'Responsable').split('@')[0];}
 function addLog(text){if(mode!=='cloud'||!state)return;state.log=(state.log||[]).concat([{at:new Date().toISOString(),who:logWho(),text}]).slice(-400);}
 function done(msg,logText){toast(msg);addLog(logText||msg);}
@@ -1700,12 +1709,14 @@ function workedMin(ps){let t=0,st=null;ps.forEach(p=>{if(p.kind==='in'||p.kind==
 function weekWorked(emp){let t=0;for(let d=0;d<7;d++)t+=workedMin(punchesOf(state.punches,emp,k(addDays(thisMonday,d))));return t;}
 async function loadExtras(){
   if(mode!=='cloud'||!sb||!company)return;
-  extrasAt=Date.now();
+  extrasAt=Date.now();let p0=null;
   const [f,pc]=await Promise.all([sb.rpc('my_plan',{cid:company.id}),sb.rpc('punch_code',{cid:company.id}),platformCfg?null:loadPlatform()]);
   if(f.error){const g=await sb.from('companies').select('plan_features').eq('id',company.id).single();company.features=(g.data&&g.data.plan_features)||{};}
-  else{const p=f.data||{};company.features=p.features||{};company.plan=p.plan;company.planUntil=p.until;company.planStatus=p.status;}
+  else{const p=f.data||{};p0=p;company.features=p.features||{};company.plan=p.plan;company.planUntil=p.until;company.planStatus=p.status;company.active=p.active!==false;}
   punchCode=pc.error?'':(pc.data||'');render();
   if(tabletSaved()&&feat('tablette')&&$('tablet').hidden)enterTablet();
+  reportUsage();
+  if(p0&&p0.active===false){showPaywall(company.role);return;}
 }
 function currentCode(){return mode==='demo'?'4821':punchCode;}
 $('punch-code-big').onclick=()=>{const c=currentCode();if(!c)return toast('Code indisponible : lance la dernière migration de la base');
@@ -1919,7 +1930,7 @@ async function loadEmployee(quiet){
   if(error){if(quiet)return;authStep('a-company');authMsg('a-cmsg',frError(error),'err');return;}
   if(data&&data.removed)return accessRemoved();
   mode='employee';eView=data;state={postes:data.postes||[]};applyBranding(data.branding||{});
-  if(!quiet)sb.rpc('my_plan',{cid:company.id}).then(r=>{if(!r.error&&r.data){company.features=r.data.features||{};company.plan=r.data.plan;}});
+  if(!quiet)reportUsage();
   if(quiet&&!$('v-employee').hidden){renderEmployee();eNotify();return;}
   setTimeout(eNotify,500);
   showEmployee();
@@ -2225,6 +2236,7 @@ document.addEventListener('click',e2=>{
 /* ---------- Comptes et synchronisation ---------- */
 let signup=false;
 function authStep(step){
+  hidePaywall();
   $('appmain').hidden=true;$('nav').hidden=true;$('auth').hidden=false;document.body.classList.remove('with-nav');
   ['a-loading','a-login','a-company','a-config','a-join'].forEach(id=>$(id).hidden=id!==step);
   $('a-cback').hidden=!company;
@@ -2232,7 +2244,7 @@ function authStep(step){
 function authMsg(id,txt,kind){const el=$(id);el.hidden=!txt;el.textContent=txt||'';if(kind)el.className='auth-msg '+kind;}
 function frError(e){const m=(e&&e.message)||'';
   if(/Could not find the function|function .* does not exist|schema cache/i.test(m))return 'La base de données doit être mise à jour : lance le dernier fichier de migration dans Supabase.';
-  if(/^(Code invalide|Code ou e-mail du responsable incorrect|Cette fiche est réservée|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème|Les échanges|Ce jour est déjà passé|Tu ne travailles pas|Une demande existe|Échange introuvable|Cet échange|Tu travailles déjà|Tu ne peux pas annuler|Formule inconnue|Commerce introuvable|Abonnement invalide|Réglages invalides)/.test(m))return m+'.';
+  if(/^(Code invalide|Code ou e-mail du responsable incorrect|Cette fiche est réservée|Salarié introuvable|Ce salarié a déjà un compte|Tu es déjà responsable|Réservé|Accès salarié introuvable|Dates invalides|Motif invalide|Pointage invalide|Non connecté|Tu ne peux pas|Code du jour incorrect|L'espace salarié|La badgeuse|Les .* ne sont pas|Produit introuvable|Option inconnue|Le stock|Article introuvable|Jour invalide|Les disponibilités|Les signalements|Décris le problème|Les échanges|Ce jour est déjà passé|Tu ne travailles pas|Une demande existe|Échange introuvable|Cet échange|Tu travailles déjà|Tu ne peux pas annuler|Formule inconnue|Accès refusé|Commerce introuvable|Abonnement invalide|Réglages invalides)/.test(m))return m+'.';
   if(/invalid login/i.test(m))return 'E-mail ou mot de passe incorrect.';
   if(/already registered|already exists/i.test(m))return 'Un compte existe déjà avec cet e-mail. Connecte-toi.';
   if(/password/i.test(m)&&/6|8|short|weak/i.test(m))return 'Le mot de passe est trop court ou trop simple.';
@@ -2259,7 +2271,7 @@ async function boot(){
 }
 async function afterLogin(){
   authStep('a-loading');
-  sb.rpc('is_platform_admin').then(r=>{isAdmin=!r.error&&r.data===true;});loadPlatform();
+  const adm=sb.rpc('is_platform_admin').then(r=>{isAdmin=!r.error&&r.data===true;});loadPlatform();
   const {data,error}=await sb.from('members').select('company_id,role,companies(name)').eq('user_id',user.id).order('created_at');
   if(error){const last=localStorage.getItem('monkiosk-last-company');if(last){company=JSON.parse(last);const c=readCache();if(c){state=normalize(c,company.name);setSync('offline');showApp();return;}}
     authStep('a-login');authMsg('a-msg',frError(error),'err');return;}
@@ -2272,6 +2284,10 @@ async function openCompany(m){
   company=Object.assign({},m);try{localStorage.setItem('monkiosk-company',m.id);}catch(e){}
   if(sb)sb.removeAllChannels();
   pendingRemote=null;dirty=false;remoteAt=null;base=null;members=[];joinCode='';
+  if(sb){const pl=await sb.rpc('my_plan',{cid:m.id});
+    if(!pl.error&&pl.data){Object.assign(company,{features:pl.data.features||{},plan:pl.data.plan,planUntil:pl.data.until,planStatus:pl.data.status,active:pl.data.active!==false});
+      if(pl.data.active===false){if(!platformCfg)await loadPlatform();showPaywall(m.role);return;}}}
+  hidePaywall();
   if(m.role==='employee')await loadEmployee();else{mode='cloud';await loadCompany();}
 }
 async function loadCompany(){
@@ -2300,6 +2316,7 @@ function subscribe(){
     .subscribe();
 }
 async function refresh(){
+  if(mode==='blocked'&&sb&&company&&!$('paywall').hidden){openCompany(company);return;}
   if(mode==='employee'&&sb&&company){loadEmployee(true);return;}
   if(mode==='cloud'&&sb&&company&&Date.now()-extrasAt>60000)loadExtras();
   if(mode!=='cloud'||!sb||!company||saving||dirty)return;
@@ -2440,20 +2457,21 @@ async function openAdmin(){
   const prem=MODULES.filter(x=>x.premium),cfg=platformCfg||{},P=cfg.plans||{};
   sheet.innerHTML=`<h2>Administration MonKiosk</h2>
   <h3>Formules et paiement</h3><p class="muted small" style="margin:0">Prix affichés aux commerçants et liens de paiement Polar (« Checkout Links »). Sans lien, le bouton affiche « Bientôt disponible », ou propose de t'écrire si un e-mail de contact est rempli.</p>
-  ${PLAN_ORDER.map(p=>`<div class="two"><label>${PLAN_LABEL[p]} : prix par mois (€)<input type="number" min="0" step="0.01" id="cf-price-${p}" value="${P[p]&&P[p].price!=null?P[p].price:''}"></label><label>Lien de paiement ${PLAN_LABEL[p]}<input type="url" id="cf-link-${p}" value="${esc((P[p]&&P[p].link)||'')}" placeholder="${p==='essentiel'?'Gratuit : laisse vide':'https://buy.polar.sh/polar_cl_...'}"></label></div>`).join('')}
+  ${PLAN_ORDER.map(p=>`<div class="adm-plan"><strong>${PLAN_LABEL[p]}</strong><div class="two"><label>Prix par mois, par commerce (€)<input type="number" min="0" step="0.01" id="cf-price-${p}" value="${P[p]&&P[p].price!=null?P[p].price:''}"></label><label>En plus, par salarié (€)<input type="number" min="0" step="0.01" id="cf-per-${p}" value="${P[p]&&P[p].per_employee?P[p].per_employee:''}" placeholder="0"></label></div><label>Lien de paiement Polar<input type="url" id="cf-link-${p}" value="${esc((P[p]&&P[p].link)||'')}" placeholder="https://buy.polar.sh/polar_cl_..."></label></div>`).join('')}
   <div class="two"><label>Lien « Gérer mon abonnement » (portail client Polar)<input type="url" id="cf-portal" value="${esc(cfg.portal||'')}" placeholder="https://polar.sh/ton-organisation/portal"></label><label>E-mail de contact<input type="email" id="cf-contact" value="${esc(cfg.contact||'')}" placeholder="contact@exemple.fr"></label></div>
+  <label class="switch" style="border:0;padding:0"><input type="checkbox" id="cf-polar" ${cfg.polar?'checked':''}><span class="grow"><strong>Paiement Polar automatique</strong><span class="muted small">À cocher une fois la fonction « polar » créée dans Supabase : activation après paiement et nombre de salariés déclaré chaque jour.</span></span></label>
   <label class="switch" style="border:0;padding:0"><input type="checkbox" id="cf-push" ${cfg.push?'checked':''}><span class="grow"><strong>Notifications sur téléphone</strong><span class="muted small">À cocher une fois la fonction « notify » créée dans Supabase.</span></span></label>
   <button type="button" class="btn primary sm" id="cf-save" style="align-self:flex-start">Enregistrer les réglages</button>
   <h3>Commerces (${data.length})</h3>
-  <ul class="list">${data.map(c=>`<li style="flex-direction:column;align-items:stretch;gap:8px"><span><strong>${esc(c.name)}</strong> <span class="chip ${c.plan&&c.plan!=='essentiel'?'ok':'info'}">${PLAN_LABEL[c.plan]||esc(c.plan||'Essentiel')}</span>${c.plan_status&&c.plan_status!=='actif'?` <span class="chip warn">${esc(c.plan_status)}</span>`:''} <span class="muted small">· ${esc(c.owner_email||'?')} · ${c.member_count} compte${c.member_count>1?'s':''}${c.plan_until?' · jusqu\'au '+fmtDM.format(fromKey(c.plan_until)):''}</span></span>
-    <span class="row" style="gap:6px"><select data-aplan="${c.id}" aria-label="Formule">${PLAN_ORDER.map(p=>`<option value="${p}" ${(c.plan||'essentiel')===p?'selected':''}>${PLAN_LABEL[p]}</option>`).join('')}</select><select data-adur="${c.id}" aria-label="Durée"><option value="">Sans échéance</option><option value="14">Essai 14 jours</option><option value="30">1 mois</option><option value="92">3 mois</option><option value="365">1 an</option></select><button type="button" class="btn sm" data-aplanset="${c.id}">Appliquer</button></span>
+  <ul class="list">${data.map(c=>`<li style="flex-direction:column;align-items:stretch;gap:8px"><span><strong>${esc(c.name)}</strong> <span class="chip ${!c.plan||c.plan==='aucune'?'warn':'ok'}">${PLAN_LABEL[c.plan||'aucune']||esc(c.plan)}</span>${c.plan_status&&c.plan_status!=='actif'?` <span class="chip warn">${esc(c.plan_status)}</span>`:''} <span class="muted small">· ${esc(c.owner_email||'?')} · ${c.member_count} compte${c.member_count>1?'s':''}${c.plan_until?' · jusqu\'au '+fmtDM.format(fromKey(c.plan_until)):''}</span></span>
+    <span class="row" style="gap:6px"><select data-aplan="${c.id}" aria-label="Formule">${['aucune',...PLAN_ORDER].map(p=>`<option value="${p}" ${(c.plan||'aucune')===p?'selected':''}>${p==='aucune'?'Sans formule (bloqué)':PLAN_LABEL[p]}</option>`).join('')}</select><select data-adur="${c.id}" aria-label="Durée"><option value="">Sans échéance</option><option value="14">Essai 14 jours</option><option value="30">1 mois</option><option value="92">3 mois</option><option value="365">1 an</option></select><button type="button" class="btn sm" data-aplanset="${c.id}">Appliquer</button></span>
     <details><summary class="muted small" style="cursor:pointer">Options une par une</summary><span class="row" style="gap:6px 14px;margin-top:6px">${prem.map(x=>`<label style="flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-weight:500"><input type="checkbox" data-afeat="${c.id}:${x.key}" ${c.features&&c.features[x.key]?'checked':''}> ${esc(x.name)}</label>`).join('')}</span></details></li>`).join('')}</ul>
   <div class="sheet-actions"><button type="button" class="btn primary" id="f-cancel">Fermer</button></div>`;
 }
 document.addEventListener('click',async ev=>{
-  if(ev.target.id==='cf-save'){const plans={};for(const p of PLAN_ORDER){const link=($('cf-link-'+p).value||'').trim();if(link&&!/^https:\/\//.test(link))return toast(`Le lien ${PLAN_LABEL[p]} doit commencer par https://`);plans[p]={name:PLAN_LABEL[p],price:Math.max(0,parseFloat($('cf-price-'+p).value)||0),link};}
+  if(ev.target.id==='cf-save'){const plans={};for(const p of PLAN_ORDER){const link=($('cf-link-'+p).value||'').trim();if(link&&!/^https:\/\//.test(link))return toast(`Le lien ${PLAN_LABEL[p]} doit commencer par https://`);plans[p]={name:PLAN_LABEL[p],price:Math.max(0,parseFloat($('cf-price-'+p).value)||0),per_employee:Math.max(0,parseFloat($('cf-per-'+p).value)||0),link};}
     const portal=($('cf-portal').value||'').trim();if(portal&&!/^https:\/\//.test(portal))return toast('Le lien du portail doit commencer par https://');
-    const cfg={plans,portal,contact:($('cf-contact').value||'').trim(),push:$('cf-push').checked};ev.target.disabled=true;
+    const cfg=Object.assign({},platformCfg||{},{plans,portal,contact:($('cf-contact').value||'').trim(),push:$('cf-push').checked,polar:$('cf-polar').checked});ev.target.disabled=true;
     const {data,error}=await sb.rpc('admin_set_config',{cfg});ev.target.disabled=false;if(error)return toast(frError(error));platformCfg=data;toast('Réglages enregistrés');if(mode==='cloud'&&state)applyGates();return;}
   const b=ev.target.closest('[data-aplanset]');if(!b)return;const cid=b.dataset.aplanset,plan=sheet.querySelector(`[data-aplan="${cid}"]`).value,d=sheet.querySelector(`[data-adur="${cid}"]`).value;
   b.disabled=true;const {data,error}=await sb.rpc('admin_set_plan',{cid,p_plan:plan,p_until:d?k(addDays(today,+d)):null});b.disabled=false;
@@ -2503,37 +2521,74 @@ if(window.monkioskDesktop){
 
 /* ---------- 2.1 : formules et paiement ---------- */
 let platformCfg=null;
-const PLAN_ORDER=['essentiel','pro','premium'],PLAN_LABEL={essentiel:'Essentiel',pro:'Pro',premium:'Premium'};
+const PLAN_ORDER=['essentiel','pro','premium'],PLAN_LABEL={aucune:'Sans formule',essentiel:'Essentiel',pro:'Pro',premium:'Premium'};
 const PRO_KEYS=['espace','badgeuse','couts','registre','stats','rentabilite','previsions','paie'];
 function planFeatures(p){return p==='premium'?MODULES.filter(x=>x.premium).map(x=>x.key):p==='pro'?PRO_KEYS:[];}
 function planNames(p){return MODULES.filter(x=>x.premium&&planFeatures(p).includes(x.key)).map(x=>x.name);}
 async function loadPlatform(){if(!sb)return;try{const {data}=await sb.from('platform_config').select('data').eq('id',1).maybeSingle();platformCfg=(data&&data.data)||null;}catch(e){}}
 let extrasAt=0;
 function planStatusChip(){const st=company&&company.planStatus;return st&&st!=='actif'?`<span class="chip warn">${esc(st==='impayé'?'Paiement en attente':st==='expiré'?'Expirée':st==='résilié'?'Résiliée':st)}</span>`:'';}
-function openPlans(){
-  const cfg=platformCfg||{},P=cfg.plans||{},cur=(company&&company.plan)||'essentiel',mail=user&&user.email||'';
+function planPrice(p){const d=((platformCfg&&platformCfg.plans)||{})[p]||{};return {base:+d.price||0,per:+d.per_employee||0,link:d.link||'',name:d.name||PLAN_LABEL[p]};}
+const fmtEur=v=>v.toLocaleString('fr-FR',{minimumFractionDigits:v%1?2:0,maximumFractionDigits:2})+' €';
+function plansGridHTML(nEmp){
+  const cfg=platformCfg||{},cur=company&&company.plan,mail=user&&user.email||'';
   const base=['Planning, équipe et congés','Checklists et relevés de température','Stock, commandes et ventes','Pertes et invendus','Plusieurs boutiques regroupées'];
-  const card=p=>{const d=P[p]||{},price=+d.price||0,isCur=cur===p;
+  const card=p=>{const d=planPrice(p),isCur=cur===p&&company.active!==false;
     const inc=p==='essentiel'?base:[p==='pro'?'Tout Essentiel, plus :':'Tout Pro, plus :',...planNames(p).filter(n=>p==='pro'||!planNames('pro').includes(n))];
     let act;
     if(isCur)act='<span class="btn" aria-disabled="true">Ta formule actuelle</span>';
-    else if(p==='essentiel')act=cfg.portal?`<a class="btn" href="${esc(cfg.portal)}" target="_blank" rel="noopener">Revenir à Essentiel</a>`:'';
-    else if(d.link&&/^https:\/\//.test(d.link))act=`<a class="btn primary" href="${esc(d.link+(d.link.includes('?')?'&':'?')+'reference_id='+company.id+'__'+p+'&locale=fr'+(mail?'&customer_email='+encodeURIComponent(mail):''))}" target="_blank" rel="noopener">Choisir ${PLAN_LABEL[p]}</a>`;
-    else if(cfg.contact)act=`<a class="btn primary" href="mailto:${esc(cfg.contact)}?subject=${encodeURIComponent('Formule '+PLAN_LABEL[p]+' – '+(state.shop||''))}">Demander ${PLAN_LABEL[p]}</a>`;
+    else if(/^https:\/\//.test(d.link))act=`<a class="btn primary" href="${esc(d.link+(d.link.includes('?')?'&':'?')+'reference_id='+company.id+'__'+p+'&locale=fr'+(mail?'&customer_email='+encodeURIComponent(mail):''))}" target="_blank" rel="noopener">Choisir ${PLAN_LABEL[p]}</a>`;
+    else if(cfg.contact)act=`<a class="btn primary" href="mailto:${esc(cfg.contact)}?subject=${encodeURIComponent('Formule '+PLAN_LABEL[p]+' – '+((state&&state.shop)||company.name||''))}">Demander ${PLAN_LABEL[p]}</a>`;
     else act='<span class="btn" aria-disabled="true">Bientôt disponible</span>';
-    return `<div class="plan${isCur?' cur':''}${p==='pro'?' pop':''}">${p==='pro'?'<span class="chip ok">Conseillée</span>':''}<h3>${esc(d.name||PLAN_LABEL[p])}</h3><div class="price">${price?`<span class="big">${num(price,2)} €</span><span class="muted small">par mois</span>`:'<span class="big">Gratuit</span>'}</div>${p==='essentiel'?'':`<p class="lead">${inc[0]}</p>`}<ul>${(p==='essentiel'?inc:inc.slice(1)).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${act}</div>`;};
+    const price=`<div class="price"><span class="big">${d.base?fmtEur(d.base):'—'}</span><span class="muted small">par mois</span></div>${d.per?`<span class="per">+ ${fmtEur(d.per)} par salarié</span>`:''}${d.per&&nEmp?`<span class="muted small">Pour ${nEmp} salarié${nEmp>1?'s':''} : ${fmtEur(Math.round((d.base+d.per*nEmp)*100)/100)} par mois</span>`:''}`;
+    return `<div class="plan${isCur?' cur':''}${p==='pro'?' pop':''}">${p==='pro'?'<span class="chip ok">Conseillée</span>':''}<h3>${esc(d.name)}</h3>${price}${p==='essentiel'?'':`<p class="lead">${inc[0]}</p>`}<ul>${(p==='essentiel'?inc:inc.slice(1)).map(x=>`<li>${esc(x)}</li>`).join('')}</ul>${act}</div>`;};
+  return `<div class="plans">${PLAN_ORDER.map(card).join('')}</div>`;
+}
+function openPlans(){
+  const cfg=platformCfg||{},cur=company&&company.plan;
   openSheet(`<h2>Formules MonKiosk</h2><p class="muted small" style="margin:0">Change de formule quand tu veux. Paiement sécurisé par Polar, sans engagement.</p>
-  <div class="plans">${PLAN_ORDER.map(card).join('')}</div>
-  ${cfg.portal&&cur!=='essentiel'?`<p class="muted small" style="margin:0">Factures, carte bancaire, résiliation : <a href="${esc(cfg.portal)}" target="_blank" rel="noopener">gérer mon abonnement</a>.</p>`:''}
-  <p class="muted small" style="margin:0">Après le paiement, reviens dans MonKiosk : ta formule s'active toute seule en quelques secondes.</p>
+  ${plansGridHTML(state&&state.employees?state.employees.length:0)}
+  ${cfg.portal&&cur&&cur!=='aucune'?`<p class="muted small" style="margin:0">Factures, carte bancaire, résiliation : <a href="${esc(cfg.portal)}" target="_blank" rel="noopener">gérer mon abonnement</a>.</p>`:''}
+  <p class="muted small" style="margin:0">Le prix par salarié compte les salariés de ton équipe dans MonKiosk. Après le paiement, reviens dans MonKiosk : ta formule s'active toute seule en quelques secondes.</p>
   <div class="sheet-actions"><button type="button" class="btn primary" id="f-cancel">Fermer</button></div>`,{type:'plans'},null);
 }
+
+/* ---------- 2.2 : sans abonnement, le commerce est bloqué ---------- */
+function showPaywall(role){
+  mode='blocked';$('appmain').hidden=true;$('nav').hidden=true;$('auth').hidden=true;document.body.classList.remove('with-nav');
+  const pw=$('paywall'),owner=role==='owner',st=company.planStatus,ended=st==='résilié'||st==='expiré';
+  const others=memberships.filter(m=>m.id!==company.id);
+  pw.hidden=false;
+  pw.innerHTML=`<div class="pw-inner"><div class="pw-head"><span class="pw-logo">${LOGO_SVG}</span><strong>MonKiosk</strong></div>
+  ${owner?`<h1>${ended?'Ton abonnement est terminé':'Choisis ta formule pour ouvrir '+esc(company.name||'ton commerce')}</h1>
+    <p class="muted">${ended?'Tes données sont conservées. Choisis une formule pour les retrouver tout de suite.':'Ton commerce est prêt. Choisis la formule qui te convient : sans engagement, résiliable à tout moment.'}</p>
+    ${platformCfg?plansGridHTML(0):'<p class="muted">Chargement des formules…</p>'}
+    <p class="muted small">Paiement sécurisé par Polar. Une fois le paiement fait, reviens ici : MonKiosk s'ouvre tout seul.</p>`
+  :`<h1>${esc(company.name||'Ce commerce')} n'a pas d'abonnement actif</h1><p class="muted">${role==='manager'?'Préviens le patron : il doit choisir une formule MonKiosk pour rouvrir le commerce.':'Préviens ton responsable : MonKiosk sera de nouveau disponible dès que le commerce aura un abonnement.'}</p>`}
+  <div class="row" style="justify-content:center"><button type="button" class="btn primary" id="pw-refresh">${owner?"J'ai payé : actualiser":'Actualiser'}</button>${others.length?'<button type="button" class="btn" data-pwother>Changer de commerce</button>':''}<button type="button" class="btn" data-newco>Créer un autre commerce</button><button type="button" class="btn danger" data-logout>Me déconnecter</button></div>
+  ${others.length?`<ul class="list pw-others" hidden>${others.map(m=>`<li><span class="grow"><strong>${esc(m.name)}</strong></span><button type="button" class="btn sm" data-switch="${m.id}">Ouvrir</button></li>`).join('')}</ul>`:''}</div>`;
+  if(role==='employee')translateNode(pw);
+}
+function hidePaywall(){const pw=$('paywall');if(pw)pw.hidden=true;}
+document.addEventListener('click',ev=>{
+  if(ev.target.id==='pw-refresh'){ev.target.disabled=true;openCompany(company);return;}
+  if(ev.target.closest('[data-pwother]')){const l=document.querySelector('.pw-others');if(l)l.hidden=!l.hidden;}
+});
+let usageTimer=null;
+function reportUsage(){
+  if(!sb||!company||!(platformCfg&&platformCfg.polar)||mode==='demo'||!planPrice(company.plan||'').per)return;
+  clearTimeout(usageTimer);usageTimer=setTimeout(()=>{
+    const n=mode==='cloud'&&state&&state.employees?state.employees.length:'e',key='monkiosk-usage-'+company.id,val=todayKey+':'+n;
+    let old='';try{old=localStorage.getItem(key)||'';}catch(e){}if(old===val)return;
+    sb.functions.invoke('polar',{body:{action:'usage',company_id:company.id}}).then(r=>{if(!r.error)try{localStorage.setItem(key,val);}catch(e){}}).catch(()=>{});
+  },8000);
+}
 function planCardHTML(){
-  const cp=(company&&company.plan)||'essentiel',cfg=platformCfg||{},n=planNames(cp).length;
+  const cp=(company&&company.plan)||'aucune',cfg=platformCfg||{},n=planNames(cp).length,pr=planPrice(cp),ne=state&&state.employees?state.employees.length:0;
   return `<div class="card"><h2 class="hi">${ic('layers')}Mon abonnement</h2>
-    <div class="row" style="align-items:center;gap:8px"><span class="chip ${cp==='essentiel'?'info':'ok'}" style="font-size:.85rem">Formule ${PLAN_LABEL[cp]||esc(cp)}</span>${planStatusChip()}${company.planUntil?`<span class="muted small">jusqu'au ${fmtDM.format(fromKey(company.planUntil))}</span>`:''}</div>
-    <p class="muted small" style="margin:0">${n?`${n} option${n>1?'s':''} avancée${n>1?'s':''} incluse${n>1?'s':''}.`:'Les options avancées sont disponibles avec les formules Pro et Premium.'}</p>
-    <div class="row"><button type="button" class="btn primary" data-plans>Voir les formules</button>${cfg.portal&&cp!=='essentiel'?`<a class="btn" href="${esc(cfg.portal)}" target="_blank" rel="noopener">Gérer mon abonnement</a>`:''}</div></div>`;
+    <div class="row" style="align-items:center;gap:8px"><span class="chip ${cp==='aucune'?'warn':'ok'}" style="font-size:.85rem">${cp==='aucune'?'Sans formule':'Formule '+(PLAN_LABEL[cp]||esc(cp))}</span>${planStatusChip()}${company.planUntil?`<span class="muted small">jusqu'au ${fmtDM.format(fromKey(company.planUntil))}</span>`:''}</div>
+    <p class="muted small" style="margin:0">${pr.base?`${fmtEur(Math.round((pr.base+pr.per*ne)*100)/100)} par mois${pr.per?` (${fmtEur(pr.base)} + ${fmtEur(pr.per)} × ${ne} salarié${ne>1?'s':''})`:''}. `:''}${n?`${n} option${n>1?'s':''} avancée${n>1?'s':''} incluse${n>1?'s':''}.`:'Les options avancées sont disponibles avec les formules Pro et Premium.'}</p>
+    <div class="row"><button type="button" class="btn primary" data-plans>Voir les formules</button>${cfg.portal&&cp!=='aucune'?`<a class="btn" href="${esc(cfg.portal)}" target="_blank" rel="noopener">Gérer mon abonnement</a>`:''}</div></div>`;
 }
 
 /* ---------- 2.1 : notifications sur téléphone ---------- */
