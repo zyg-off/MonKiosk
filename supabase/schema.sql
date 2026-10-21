@@ -1790,9 +1790,9 @@ $$;
 update public.companies set plan_features = coalesce(plan_features, '{}'::jsonb) || '{"multi":true}'::jsonb
   where plan = 'premium' and coalesce(plan_features->>'multi', '') <> 'true';
 
--- 3 € par salarié aussi en Pro et Premium (seulement si aucun prix par salarié n'est déjà réglé)
+-- Prix par salarié en Pro (2,50 €) et Premium (2 €) (seulement si aucun prix par salarié n'est déjà réglé)
 update public.platform_config set data = jsonb_set(jsonb_set(data,
-    '{plans,pro}', coalesce(data->'plans'->'pro', '{"name":"Pro","price":29,"link":""}'::jsonb) || '{"per_employee":3}'::jsonb, true),
-    '{plans,premium}', coalesce(data->'plans'->'premium', '{"name":"Premium","price":49,"link":""}'::jsonb) || '{"per_employee":3}'::jsonb, true)
+    '{plans,pro}', coalesce(data->'plans'->'pro', '{"name":"Pro","price":29,"link":""}'::jsonb) || '{"per_employee":2.5}'::jsonb, true),
+    '{plans,premium}', coalesce(data->'plans'->'premium', '{"name":"Premium","price":49,"link":""}'::jsonb) || '{"per_employee":2}'::jsonb, true)
 where id = 1 and coalesce((data->'plans'->'pro'->>'per_employee')::numeric, 0) = 0
   and coalesce((data->'plans'->'premium'->>'per_employee')::numeric, 0) = 0;
